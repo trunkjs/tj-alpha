@@ -1,0 +1,41 @@
+{
+  "name": "@trunkjs/alpha",
+  "version": "1.0.1",
+  "description": "",
+  "license": "proprietary",
+  "main": "./dist/index.js",
+  "module": "./dist/index.module.js",
+  "directories": {
+    "doc": "docs",
+    "themes": "themes"
+  },
+  "files": [
+    "/dist",
+    "/src",
+    "/templates",
+    "/themes",
+    "/docs",
+    "/elements",
+    "/sections",
+    "/_tpl",
+    "/_vendor",
+    "*.scss",
+    "*.ts"
+  ],
+  "workspaces": [
+    "workspaces--/*"
+  ],
+  "author": "",
+  "dependencies": {
+
+  },
+  "devDependencies": {
+
+  },
+  "scripts": {
+    "make.mjs": "tsc -d && mv dist/index.js dist/index.module.js",
+    "make.cjs": "tsc -m commonjs",
+    "build": "npm run make.mjs && npm run make.cjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
