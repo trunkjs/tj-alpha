@@ -27,15 +27,17 @@
   ],
   "author": "",
   "dependencies": {
-
-  },
-  "devDependencies": {
-
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
   },
   "scripts": {
     "make.mjs": "tsc -d && mv dist/index.js dist/index.module.js",
     "make.cjs": "tsc -m commonjs",
     "build": "npm run make.mjs && npm run make.cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "jsdom": "^26.0.0"
   }
 }

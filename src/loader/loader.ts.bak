@@ -1,0 +1,81 @@
+/**
+ * Application Loader
+ * 
+ * Runlevel Based Application Loader for Micro-Frontend Components.
+ */
+
+type RunLevelCallback = () => Promise<void> | void;
+
+class Loader {
+    private runlevels: Map<number, RunLevelCallback[]> = new Map();
+    private currentLevel = 0;
+    private maxRunLevel = 10;
+    private isReady = false;
+
+    constructor() {
+        (window as any).loader = this;
+        document.dispatchEvent(new Event("loaderready"));
+
+        if (typeof (window as any).onloaderready === "function") {
+            (window as any).onloaderready();
+        }
+    }
+
+    /**
+     * Registers a callback for a given runlevel.
+     * @param level The runlevel (0-10).
+     * @param callback The function to be executed at this runlevel.
+     */
+    register(level: number, callback: RunLevelCallback): void {
+        if (level < 0 || level > this.maxRunLevel) {
+            console.warn(`Runlevel ${level} is out of range (0-${this.maxRunLevel})`);
+            return;
+        }
+
+        if (!this.runlevels.has(level)) {
+            this.runlevels.set(level, []);
+        }
+
+        this.runlevels.get(level)?.push(callback);
+    }
+
+    /**
+     * Executes all callbacks in order up to the specified runlevel.
+     * @param level The runlevel to execute up to.
+     */
+    async runlevel(level: number): Promise<void> {
+        if (level < this.currentLevel) {
+            console.warn(`Cannot move back to runlevel ${level} from ${this.currentLevel}`);
+            return;
+        }
+
+        for (let i = this.currentLevel; i <= level; i++) {
+            if (!this.runlevels.has(i)) continue;
+
+            const callbacks = this.runlevels.get(i) || [];
+            const startTime = performance.now();
+
+            await Promise.all(callbacks.map(async (callback) => {
+                const cbStartTime = performance.now();
+                await callback();
+                const cbDuration = performance.now() - cbStartTime;
+
+                if (cbDuration > 200) {
+                    console.warn(`Runlevel ${i} callback took ${cbDuration}ms`);
+                }
+            }));
+
+            const levelDuration = performance.now() - startTime;
+            if (levelDuration > 200) {
+                console.warn(`Runlevel ${i} execution took ${levelDuration}ms`);
+            }
+
+            this.currentLevel = i;
+        }
+
+        this.isReady = true;
+    }
+}
+
+// Initialize the Loader
+export const loader = new Loader();
