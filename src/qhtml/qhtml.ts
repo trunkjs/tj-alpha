@@ -1,33 +1,164 @@
-import {create_element} from "@/tools/create-element";
+import { create_element } from "@/tools/create-element";
+import { TokenReader } from "@/tools/TokenReader";
 
-const fail = (ln: number, msg: string): never => {
-    /* eslint-disable-next-line no-throw-literal */
-    throw new Error(`qhtml: line ${ln} → ${msg}`);
-}
-type Attrs = Record<string, string>;
+type AttrMap = Record<string, string>;
 
 /**
+ * ParsedLine describes result of parsing one visual line.
+ */
+interface ParsedLine {
+    depth?: number;
+    type: 'element' | 'text' | 'comment';
+    tag?: string;
+    attrs?: AttrMap;
+    text?: string|null;
+    comment?: string;
+}
+
+type ParsedWordContent = {
+    tag?: string;
+    classes?: string[];
+    id?: string;
+}
+
+
+/**
+ * Extracts tag, classes, and id from a word.
  *
- * <example>
- * const view = qhtml`
- * %% root-level comment
- *  .container #main style="background:lightgray"
- *  > h1 .title data-info="heading" | Welcome to \"qhtml\"
- *  > p .lead | One DSL – all the things.
- *  > ul .list
- *  >> li | Item 1
- *  >> li .highlight | Item 2
- *  >>> span .badge #badge | NEW %% inline comment
- *  > form action="/submit" method='post'
- *  >> input type="text" name="username" placeholder="Your name"
- *  >> button .btn .btn-primary type="submit" | Send
- *  > .footer
- *  | © 2025 MySite
- * `;
- * </example>
+ * tag.class1.class2#id
  *
- * @param strings
- * @param expr
+ * @param word
+ */
+function extractDataFromWord(word: string): ParsedWordContent {
+    // Extract the Tag name by Regex and remove it from the word if found (using replace)
+    const tagRegex = /^[a-zA-Z0-9]+/;
+
+    const tagMatch = word.match(tagRegex);
+    const tag = tagMatch ? tagMatch[0] : undefined;
+    const remainingWord = tagMatch ? word.replace(tagRegex, '') : word;
+
+    // Extract and remove #id
+    const idRegex = /#([a-zA-Z0-9-_]+)/;
+    const idMatch = remainingWord.match(idRegex);
+    const id = idMatch ? idMatch[1] : undefined;
+    const remainingWordWithoutId = idMatch ? remainingWord.replace(idRegex, '') : remainingWord;
+
+    // Extract clsses by spliting by .
+    const classes = remainingWordWithoutId.split('.').filter((cls) => cls !== '');
+
+    return {tag, classes, id};
+}
+export { extractDataFromWord };
+
+
+/**
+ * Parse one line into structured ParsedLine.
+ *
+ * @param raw Input line string
+ * @param ln  Line number (for errors)
+ */
+function parseLine(raw: string, ln: number): ParsedLine | null {
+    const reader = new TokenReader(raw);
+    reader.skipWhitespace();
+
+    const attrWordRegex = /[a-zA-Z0-9-.#]/;
+
+
+
+    // Determine Depth
+    let depth = 1;
+    let tag = "div";
+    let text : string | null = null;
+    let classes: string[] = [];
+    let attrs: AttrMap = {};
+    while (reader.peekChar() === '>') {
+        depth++;
+        reader.readChar();
+        reader.skipWhitespace();
+    }
+
+    if (reader.peekChar() === '%') {
+        reader.readChar();
+        const comment = reader.readUntil('\n');
+        return { type: 'comment', comment };
+    }
+
+    if (reader.peekChar() === '|') {
+        reader.readChar();
+        reader.skipWhitespace();
+        text = reader.readUntil('\n');
+        return { type: 'text', text };
+    }
+
+    const firstWord = reader.readWord(attrWordRegex);
+    if (firstWord) {
+        const parsed = extractDataFromWord(firstWord);
+        tag = parsed.tag || tag;
+        classes = parsed.classes || [];
+        if (parsed.id) {
+            attrs.id = parsed.id;
+        }
+    }
+
+
+    // check for comment and remove
+    if (reader.peekChar() === '%') {
+        reader.readChar();
+        reader.readUntil('\n');
+    }
+
+
+    while (!reader.isEOF()) {
+        reader.skipWhitespace();
+        if (reader.peekChar() === '|') {
+            reader.readChar();
+            reader.skipWhitespace();
+            text = reader.readUntil('\n');
+            break;
+        }
+        if (reader.peekChar() === '%') {
+            reader.readChar();
+            reader.readUntil('\n'); // Skip comment
+            break;
+        }
+        let attrName = reader.readWord(attrWordRegex);
+        if (!attrName) break;
+        if (attrName.startsWith(".")) {
+            classes.push(attrName.substring(1));
+            continue;
+        }
+        if (attrName.startsWith("#")) {
+            attrs.id = attrName.substring(1);
+            continue;
+        }
+        reader.skipWhitespace();
+        if (reader.peekChar() !== '=') {
+            throw new Error(`qhtml line ${ln + 1}: Attribute "${attrName}" lacks '='`);
+        }
+        reader.readChar(); // consume '='
+        let attrValue = reader.readValue(" "); // Read until whitespace
+        if (!attrValue) {
+            throw new Error(`qhtml line ${ln + 1}: Attribute "${attrName}" lacks value`);
+        }
+        attrs[attrName] = attrValue.value_str;
+    }
+
+    if (attrs.hasOwnProperty("class")) {
+        classes.push(attrs.class);
+    }
+    if (classes.length > 0) {
+        attrs.class = classes.join(" ");
+    }
+
+    return { depth, type: 'element', attrs, tag, text };
+}
+
+/**
+ * qhtml parses the tagged-template DSL into a DocumentFragment.
+ *
+ * @param strings Tagged-template string array
+ * @param expr    Interpolated expressions
+ * @returns       Generated DocumentFragment
  */
 export function qhtml(
     strings: TemplateStringsArray,
@@ -42,119 +173,35 @@ export function qhtml(
     const frag = document.createDocumentFragment();
     const stack: (HTMLElement | DocumentFragment)[] = [frag];
 
-    lines.forEach((raw, ln) => {
-        let depth = 0;
-        while (raw[depth] === '>') depth++;
-        raw = raw.slice(depth).trim();
-        depth += 1;
+    let depth = 1;
+    for (let ln = 0; ln < lines.length; ln++) {
+        const raw = lines[ln];
+        if (!raw.trim()) continue;
+        const parsed = parseLine(raw, ln);
+        if (!parsed) continue;
 
-        if (!raw) return;
+        depth = parsed.depth ?? depth;
+        if (stack.length < depth) throw new Error(`qhtml line ${ln + 1}: Depth ${depth - 1} has no parent`);
+        const parent = stack[depth - 1];
 
-        /* -------- tokenize (no RegExp) ---------------------------------- */
-        const tokens: string[] = [];
-        let cur = '';
-        let inQuote = false;
-        let q = '';
-
-        for (let i = 0; i < raw.length; i++) {
-            const ch = raw[i];
-            if (inQuote) {
-                if (ch === '\\') {
-                    if (i + 1 >= raw.length)
-                        fail(ln + 1, 'Backslash at EOL inside string');
-                    cur += ch + raw[++i];
-                } else if (ch === q) {
-                    inQuote = false;
-                    cur += ch;
-                } else cur += ch;
-            } else {
-                if (ch === '"' || ch === "'") {
-                    inQuote = true;
-                    q = ch;
-                    cur += ch;
-                } else if (ch === ' ') {
-                    if (cur) {
-                        tokens.push(cur);
-                        cur = '';
-                    }
-                } else {
-                    cur += ch;
-                }
-            }
+        if (parsed.type === 'comment') {
+            parent.append(document.createComment(parsed.comment || ''));
+            continue;
         }
-        if (inQuote) fail(ln + 1, 'Unterminated string');
-        if (cur) tokens.push(cur);
-
-        /* -------- inline comment ---------------------------------------- */
-        let comment: string | undefined;
-        for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i].startsWith('%%')) {
-                comment = tokens.slice(i).join(' ').slice(2).trim();
-                tokens.length = i;
-                break;
-            }
+        if (parsed.type === 'text') {
+            stack[depth].append(parsed.text || '');
+            continue;
         }
-
-        if (tokens[0] === '|') {
-            if (depth - 1 >= stack.length)
-                fail(ln + 1, 'Text depth has no parent');
-            stack[depth - 1].append(tokens.slice(1).join(' '));
-            if (comment) stack[depth - 1].append(document.createComment(comment));
-            return;
+        const el = create_element(parsed.tag!, parsed.attrs || {});
+        if (parsed.text) {
+            el.append(document.createTextNode(parsed.text));
         }
-
-        if (stack.length < depth)
-            fail(ln + 1, `Depth ${depth - 1} has no parent`);
-
-        /* -------- element line ----------------------------------------- */
-        const first = tokens.shift()!;
-        let i = 0,
-            tag = '';
-        const cls: string[] = [];
-        let id = '';
-
-        while (i < first.length && first[i] !== '.' && first[i] !== '#')
-            tag += first[i++];
-        if (!tag) tag = 'div';
-
-        while (i < first.length) {
-            const mark = first[i++];
-            const buf: string[] = [];
-            while (i < first.length && first[i] !== '.' && first[i] !== '#')
-                buf.push(first[i++]);
-            if (!buf.length) fail(ln + 1, 'Empty "." or "#" token');
-            mark === '.' ? cls.push(buf.join('')) : (id = buf.join(''));
-        }
-
-        const attrs: Attrs = {};
-        if (id) attrs.id = id;
-
-        for (const t of tokens) {
-            if (t.startsWith('.')) cls.push(t.slice(1));
-            else if (t.startsWith('#')) attrs.id = t.slice(1);
-            else {
-                const eq = t.indexOf('=');
-                if (eq === -1) fail(ln + 1, `Attr "${t}" lacks '='`);
-                const name = t.slice(0, eq);
-                let val = t.slice(eq + 1);
-                if (!val) fail(ln + 1, `Attr "${name}" lacks value`);
-                if (
-                    (val.startsWith('"') && val.endsWith('"')) ||
-                    (val.startsWith("'") && val.endsWith("'"))
-                ) {
-                    val = val.slice(1, -1).replaceAll('\\"', '"').replaceAll("\\'", "'");
-                }
-                attrs[name] = val;
-            }
-        }
-
-        if (cls.length) attrs.class = cls.join(' ');
-
-        const el = create_element(tag, attrs);
+        parent.appendChild(el);
         stack[depth] = el;
-        stack[depth - 1].appendChild(el);
-        if (comment) el.append(document.createComment(comment));
-    });
+        if (parsed.comment) {
+            el.append(document.createComment(parsed.comment));
+        }
+    }
 
     return frag;
 }

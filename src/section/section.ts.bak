@@ -1,0 +1,32 @@
+import {ReactiveElement} from "lit";
+import {property} from "lit/decorators";
+import {hydrateKeyValueString, dehydrateKeyValueString} from "@/tools/key-value-string-parser";
+
+/**
+ * Property converter for 'layout' attribute.
+ * Parses a layout string into an object and serializes object back to string.
+ */
+export const layoutAttributeConverter = {
+    fromAttribute(value: string | null): Record<string, string> {
+        if (!value) return {};
+        return hydrateKeyValueString(value);
+    },
+    toAttribute(value: Record<string, string> | null): string | null {
+        if (!value || typeof value !== 'object') return null;
+        return dehydrateKeyValueString(value);
+    },
+};
+
+class Section extends ReactiveElement {
+
+    /**
+     * Binds an object to the 'layout' attribute via parsing/serialization.
+     */
+    @property({
+        type: Object,
+        attribute: 'layout',
+        converter: layoutAttributeConverter
+    })
+    layout: Record<string, string> = {};
+
+}

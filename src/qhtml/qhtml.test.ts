@@ -88,16 +88,16 @@ describe('qhtml', () => {
         ).toThrowError(/Unterminated string/);
     });
 
-    it('should support inline comments', () => {
+    it('should not strip inline comments from text', () => {
         const frag = qhtml`
             div | Text %% comment here
         `;
         container.appendChild(frag);
 
-        const commentNode = Array.from(container.querySelector('div')?.childNodes ?? [])
-            .find(n => n.nodeType === Node.COMMENT_NODE);
+        const div = container.querySelector('div')
 
-        expect(commentNode?.nodeValue?.includes('comment here')).toBeTruthy();
+
+        expect(div?.textContent).toBe("Text %% comment here");
     });
 
     it('should support element with only class or id', () => {
@@ -122,7 +122,7 @@ describe('qhtml', () => {
 
     it('should handle multiple class definitions', () => {
         const frag = qhtml`
-            div.box red bold
+            div.box .red .bold
         `;
         container.appendChild(frag);
 
