@@ -41,27 +41,42 @@ export type LoaderCallback = () => Promise<any> | any;
 
 export class Loader {
     private callbacks: Map<number, LoaderCallback[]> = new Map();
-    private runlevelPromises: { [key: number]: { promise: Promise<void>, resolve: () => void } } = {};
     public version: number;
     private maxRunLevel = 10;
 
     constructor(version: number = 1) {
         this.version = version;
 
-        for (let i = 0; i <= this.maxRunLevel; i++) {
-            let resolver: () => void = () => {};
-            const promise = new Promise<void>((resolve) => { resolver = resolve; });
-            this.runlevelPromises[i] = { promise, resolve: resolver };
-        }
+        // Handle global loader versioning conflict
+        if (typeof window !== 'undefined') {
+            if ((window as any).loader) {
+                if ((window as any).loader.version < this.version) {
+                    console.warn("A lower version of Loader detected. Overriding with higher version.");
+                    (window as any).loader = this;
+                }
+            } else {
+                (window as any).loader = this;
+                document.dispatchEvent(new Event("loaderready"));
 
-        if (typeof window !== 'undefined' && !(window as any).loader) {
-            (window as any).loader = this;
-            document.dispatchEvent(new Event("loaderready"));
+                if (typeof (window as any).onloaderready === "function") {
+                    (window as any).onloaderready();
+                }
+            }
         }
-
-        this.run();
     }
 
+    /**
+     * Registers a callback for a specific runlevel.
+     * @param runlevel - The runlevel (number between 0 and 10)
+     * @param callback - The callback function to be executed at this runlevel.
+     *
+     * Example:
+     * ```javascript
+     * loader.registerCallback(3, async () => {
+     *     console.log("Executing runlevel 3 callback.");
+     * });
+     * ```
+     */
     public registerCallback(runlevel: number, callback: LoaderCallback): void {
         if (runlevel < 0 || runlevel > this.maxRunLevel) {
             console.warn(`Runlevel ${runlevel} is out of range (0-${this.maxRunLevel})`);
@@ -73,7 +88,19 @@ export class Loader {
         this.callbacks.set(runlevel, existingCallbacks);
     }
 
-    private async executeRunlevel(runlevel: number): Promise<void> {
+    /**
+     * Executes all registered callbacks for a specific runlevel.
+     * - Callbacks at the given runlevel are executed concurrently.
+     * - Execution durations are recorded, and a warning is issued if a callback exceeds 200ms.
+     *
+     * @param runlevel - The runlevel to execute.
+     *
+     * Example:
+     * ```javascript
+     * await loader.runlevel(5);
+     * ```
+     */
+    public async runlevel(runlevel: number = 5): Promise<void> {
         if (runlevel < 0 || runlevel > this.maxRunLevel) {
             console.warn(`Runlevel ${runlevel} is out of range (0-${this.maxRunLevel})`);
             return;
@@ -94,52 +121,21 @@ export class Loader {
         });
 
         await Promise.all(promises);
-        this.runlevelPromises[runlevel].resolve();
-    }
-
-    public async run(): Promise<void> {
-        if (typeof window === 'undefined') {
-            throw new Error("runlevel() should only be called in a browser environment.");
-        }
-
-        await (window as any).onloaderready()
-        await this.executeRunlevel(0);
-
-        if (!document.body) {
-            await new Promise<void>(resolve => {
-                document.addEventListener("readystatechange", () => resolve());
-            });
-        }
-        for (let lvl = 1; lvl <= 4; lvl++) {
-            await this.executeRunlevel(lvl);
-        }
-
-        if (document.readyState === "loading") {
-            await new Promise<void>(resolve => {
-                document.addEventListener("DOMContentLoaded", () => resolve());
-            });
-        }
-        for (let lvl = 5; lvl <= 9; lvl++) {
-            await this.executeRunlevel(lvl);
-        }
-
-        if (document.readyState !== "complete") {
-            await new Promise<void>(resolve => {
-                window.addEventListener("load", () => resolve());
-            });
-        }
-        await this.executeRunlevel(10);
-    }
-
-    public runlevel(runlevel: number = 5): Promise<void> {
-        if (runlevel < 0 || runlevel > this.maxRunLevel) {
-            console.warn(`Runlevel ${runlevel} is out of range (0-${this.maxRunLevel})`);
-            return Promise.resolve();
-        }
-        return this.runlevelPromises[runlevel].promise;
     }
 }
 
+/**
+ * Triggers execution of a specific runlevel.
+ * Ensures the loader is initialized before calling `runlevel()`.
+ *
+ * @param runlevel - The runlevel to execute.
+ * @returns A Promise that resolves when all callbacks for the runlevel have completed.
+ *
+ * Example:
+ * ```javascript
+ * await runlevel(2);
+ * ```
+ */
 export function runlevel(runlevel: number = 5): Promise<void> {
     if (typeof window === 'undefined') {
         throw new Error("runlevel() should only be called in a browser environment.");

@@ -28,7 +28,8 @@
   "author": "",
   "dependencies": {
     "vite": "^6.1.0",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+      "lit": "^3.3.0"
   },
   "scripts": {
     "make.mjs": "tsc -d && mv dist/index.js dist/index.module.js",

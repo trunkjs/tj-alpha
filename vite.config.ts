@@ -6,6 +6,11 @@ export default defineConfig({
     host: "0.0.0.0",
     hmr: true
   },
+    resolve : {
+        alias: {
+          '@': '/src'
+        }
+    },
   root: './',
   publicDir: './www',
   build: {
@@ -13,8 +18,11 @@ export default defineConfig({
       input: './www/www.ts'
     }
   },
+
   test: {
     globals: true,
+    inspect: "0.0.0.0:9229",
+
     environment: 'jsdom'
   }
 });
