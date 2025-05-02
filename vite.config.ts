@@ -5,6 +5,7 @@ export default defineConfig({
     port: 4000,
     host: "0.0.0.0",
     hmr: true
+
   },
     resolve : {
         alias: {
@@ -12,10 +13,10 @@ export default defineConfig({
         }
     },
   root: './',
-  publicDir: './www',
+    publicDir: './public/www',
   build: {
     rollupOptions: {
-      input: './www/www.ts'
+      input: './public/main.ts'
     }
   },
 
