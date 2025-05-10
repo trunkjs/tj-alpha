@@ -6,3 +6,4 @@ libs/
 /node_modules
 /workspaces
 /dist
+nohup.out

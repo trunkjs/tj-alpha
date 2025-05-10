@@ -33,7 +33,7 @@ export const layoutAttributeConverter = {
 export function LayoutMixin<TBase extends Constructor<ReactiveElement>>(
     Base: TBase,
     options?: { allowedKeys?: string[] }
-) {
+) : TBase {
 
 
     return class LayoutMixed extends Base {

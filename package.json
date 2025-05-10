@@ -33,10 +33,9 @@
     "vitest": "^3.0.5"
   },
   "scripts": {
-    "make.mjs": "tsc -d && mv dist/index.js dist/index.module.js",
-    "make.cjs": "tsc -m commonjs",
+    "debug": "node --inspect-brk node_modules/vite/bin/vite.js",
     "build": "npm run make.mjs && npm run make.cjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.7",

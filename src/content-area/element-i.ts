@@ -18,7 +18,6 @@ export class ElementI {
     public setNewN(n : string) {
         n = n.toLowerCase().trim();
 
-        console.log("ElementI setNewN", n);
         if (n === "none") {
             this.mod = IModifier.NONE;
             return;
@@ -27,7 +26,7 @@ export class ElementI {
             this.mod = IModifier.APPEND;
             n = n.substring(1);
         }
-        console.log("ElementI setNewN", n);
+
         this.n = parseInt((parseFloat(n) * 10) + "");
         if (isNaN(this.n)) {
             console.warn("ElementI: Invalid number", n);

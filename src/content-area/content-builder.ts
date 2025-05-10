@@ -39,20 +39,41 @@ export class ContentBuilder {
     private containerIndex : number[] = [0];
 
 
+    protected copyAttributes(originalNode : HTMLElement, newNode : HTMLElement, isHr : boolean = false) {
+        // copy all attributes starting with "section-" or layout to new Node
+
+        let attributeNames = originalNode.getAttributeNames();
+        for(let attrName of attributeNames) {
+            if (attrName.startsWith("section-")) {
+                newNode.setAttribute(attrName.substring(8), originalNode.getAttribute(attrName)!);
+                originalNode.removeAttribute(attrName);
+            } else if (attrName.startsWith("layout-")) {
+                newNode.setAttribute(attrName.substring(7), originalNode.getAttribute(attrName)!);
+                originalNode.removeAttribute(attrName);
+            } else if (attrName === "i") {
+                continue;
+            } else if (attrName === "layout"){
+                newNode.setAttribute("layout", originalNode.getAttribute(attrName)!);
+                originalNode.removeAttribute(attrName);
+            } else if (attrName.startsWith("layout-")) {
+                newNode.setAttribute(attrName.substring(7), originalNode.getAttribute(attrName)!);
+                originalNode.removeAttribute(attrName);
+            } else if (isHr) {
+                // if the node is a hr and has a section-hr attribute, set it to the new container node
+                newNode.setAttribute(attrName, originalNode.getAttribute(attrName)!);
+                originalNode.removeAttribute(attrName);
+            }
+        }
+    }
+
+
     protected createNewContainerNode(originalNode : HTMLElement, i : ElementI) : HTMLElement {
-        console.log(i);
         let newContainerNode = create_element("section", {i: i.getNasString()});
         // copy all attributes starting with "section-" or layout to new Node
         let newContainerAttributes = originalNode.getAttributeNames()
 
-        if (originalNode.hasAttribute("layout")) {
-            newContainerNode.setAttribute("layout", originalNode.getAttribute("layout")!);
-        }
-        for(let attr of newContainerAttributes) {
-            if (attr.startsWith("section-")) {
-                newContainerNode.setAttribute(attr.substring(8), originalNode.getAttribute(attr)!);
-            }
-        }
+
+        this.copyAttributes(originalNode, newContainerNode, originalNode.tagName === "HR");
         return newContainerNode;
     }
 
@@ -60,27 +81,46 @@ export class ContentBuilder {
     protected arrangeSingleNode(node : HTMLElement, i: ElementI) {
         let j = 0;
         for(j = 0; j < this.containerIndex.length; j++) {
-            if (this.containerIndex[j] > i.getNasInt()) {
+            if (this.containerIndex[j] >= i.getNasInt()) {
                 break;
             }
         }
 
-        j = j-1;
 
-        let curContainer = this.containerPath[j];
-        this.containerPath.length = j+1;
-        this.containerIndex.length = j+1;
 
+        let containerNode = null;
+        if (i.getModifier() === IModifier.APPEND) {
+            containerNode = this.containerPath[j]
+        } else {
+            containerNode = this.createNewContainerNode(node, i);
+        }
+
+        let curContainer = this.containerPath[j-1];
+        this.containerPath.length = j;
+        this.containerIndex.length = j;
         // Create new Node and apply attributes from original node
-        let newContainerNode = this.createNewContainerNode(node, i);
-        newContainerNode.appendChild(node);
-        curContainer.appendChild(newContainerNode);
 
-        this.containerPath.push(newContainerNode);
+        containerNode.appendChild(create_element("p", {}, JSON.stringify({integ: i.getNasInt(), string: i.getNasString(), mod: i.getModifier()})));
+        containerNode.appendChild(node);
+        curContainer.appendChild(containerNode);
+
+        // Hide HR Elements with i-attribute
+        if (node.tagName === "HR" && node.hasAttribute("i")) {
+            // hr shortcut. Move all attributes to the new container node. If there are any attributes if append modifier - trigger a warning and ignore them
+
+            // if the node is a hr and has a section-hr attribute, set it to the new container node
+            node.setAttribute("hidden", "true");
+
+        }
+
+
+
+        this.containerPath.push(containerNode);
         this.containerIndex.push(i.getNasInt());
-        this.currentContainerNode = newContainerNode;
+        this.currentContainerNode = containerNode;
 
     }
+
 
     private appendToCurrentContainer(node : Node) {
         if (this.currentContainerNode === null) {
