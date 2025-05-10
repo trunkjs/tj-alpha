@@ -8,7 +8,6 @@ import style from "./test1.scss?inline";
 import {qhtml} from "@/qhtml/qhtml";
 
 const tpl = html`
-    <style>${style}</style>
     <div class="test">
         <h1>Welcome Junge!</h1>
         <slot name="header" select="h1,h2"></slot>

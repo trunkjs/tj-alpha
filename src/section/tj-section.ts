@@ -19,7 +19,7 @@ export class TjSection extends LayoutMixin(ReactiveElement, {allowedKeys: ['use'
         return 'tj-section';
     }
 
-    constructor(layout ? : Record<string, string>, children ? : HTMLCollection) {
+    constructor(layout ? : Record<string, string>, attributes?: Record<string, string>, children ? : HTMLCollection) {
         super();
 
         if (layout)
@@ -27,7 +27,20 @@ export class TjSection extends LayoutMixin(ReactiveElement, {allowedKeys: ['use'
 
         let use = this.layout["use"];
         let tpl = sectionRegistry[use];
+
         let templateApplication = tpl(this, {} as Record<string, string>) as TemplateApplication;
+
+        if (attributes) {
+            Object.keys(attributes).forEach((key) => {
+                this.setAttribute(key, attributes[key]);
+            });
+        }
+        // Always set the name of the section as class
+        this.setAttribute("class", use.substring(1) + " " + (this.getAttribute("class") ?? ""));
+
+        console.log("TjSection", use, this.layout, this.getAttribute("class"));
+
+
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.innerHTML = litTemplateToString(templateApplication.html);

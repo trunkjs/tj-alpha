@@ -46,7 +46,7 @@ export class ContentBuilder {
         for(let attrName of attributeNames) {
             if (attrName.startsWith("section-")) {
                 newNode.setAttribute(attrName.substring(8), originalNode.getAttribute(attrName)!);
-                originalNode.removeAttribute(attrName);
+                //originalNode.removeAttribute(attrName);
             } else if (attrName.startsWith("layout-")) {
                 newNode.setAttribute(attrName.substring(7), originalNode.getAttribute(attrName)!);
                 originalNode.removeAttribute(attrName);

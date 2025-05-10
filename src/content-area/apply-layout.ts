@@ -2,7 +2,13 @@ import {hydrateKeyValueString} from "@/tools/key-value-string-parser";
 import {TjSection} from "@/section/tj-section";
 
 export function applyLayout(node : HTMLElement) : HTMLElement | null {
-    if ( ! node.hasAttribute('layout')) {
+    let attributes : Record<string, string> = {};
+    node.getAttributeNames().forEach((name) => {
+        attributes[name] = node.getAttribute(name) ?? "";
+    });
+
+    let layout = attributes["layout"];
+    if (layout === undefined) {
         // Only parse the first layer of layout nodes
         Array.from(node.childNodes).forEach(child => {
             if (child instanceof HTMLElement) {
@@ -12,15 +18,15 @@ export function applyLayout(node : HTMLElement) : HTMLElement | null {
         return null;
     }
 
-    let layout = node.getAttribute('layout')!;
-    let layoutHydrated = hydrateKeyValueString(layout);
+
+    let layoutHydrated = hydrateKeyValueString(layout ?? "");
 
     let use = layoutHydrated["use"];
     if (use !== undefined) {
         let replacementElement = null;
         if (use.startsWith("#")) {
             try {
-                replacementElement =  new TjSection(layoutHydrated, node.children);
+                replacementElement =  new TjSection(layoutHydrated, attributes, node.children);
             } catch (e) {
                 console.error("Error creating section with use: ", use, "on node", node, "\n", e );
                 return null;
