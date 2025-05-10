@@ -1,5 +1,6 @@
 import { create_element } from "@/tools/create-element";
 import { TokenReader } from "@/tools/TokenReader";
+import {TemplateResult} from "lit";
 
 type AttrMap = Record<string, string>;
 
@@ -163,7 +164,7 @@ function parseLine(raw: string, ln: number): ParsedLine | null {
 export function qhtml(
     strings: TemplateStringsArray,
     ...expr: unknown[]
-): DocumentFragment {
+): TemplateResult {
     const lines = String.raw({ raw: strings }, ...expr)
         .trim()
         .replaceAll('\r\n', '\n')
@@ -203,5 +204,13 @@ export function qhtml(
         }
     }
 
-    return frag;
+    let doc = document.createElement("template");
+    doc.content.appendChild(frag);
+
+    // Hack to return the same as lit-html
+    return {
+        ['_$litType$']: 1, // 1 => HTML
+        strings: Object.freeze(Object.assign([doc.innerHTML], { raw: [doc.innerHTML] })) as TemplateStringsArray,
+        values: []
+    }
 }

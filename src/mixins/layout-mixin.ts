@@ -18,6 +18,7 @@ export const layoutAttributeConverter = {
     },
 };
 
+type AbstractConstructor<T = {}> = abstract new (...args: any[]) => T;
 
 /**
  * LayoutMixin
@@ -30,17 +31,20 @@ export const layoutAttributeConverter = {
  *   // now has .layout: Record<string,string>
  * }
  */
-export function LayoutMixin<TBase extends Constructor<ReactiveElement>>(
+export function LayoutMixin<TBase extends AbstractConstructor<ReactiveElement>>(
     Base: TBase,
     options?: { allowedKeys?: string[] }
-) : TBase {
+) : TBase & AbstractConstructor<{ layout: Record<string, string> }> {
 
 
-    return class LayoutMixed extends Base {
+    abstract class LayoutMixed extends Base {
         public layout: Record<string, string> = {};
 
         static get properties() {
+            // Very important: Merge with base properties
+            const baseProps = (Base as any).properties ?? {};
             return {
+                ...baseProps,
                 layout: {
                     type: Object,
                     attribute: 'layout',
@@ -50,4 +54,5 @@ export function LayoutMixin<TBase extends Constructor<ReactiveElement>>(
             };
         }
     };
+    return LayoutMixed as any;
 }

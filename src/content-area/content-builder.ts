@@ -147,9 +147,8 @@ export class ContentBuilder {
 
 
             this.arrangeSingleNode(element, i!);
-
-
         }
+
 
 
     }

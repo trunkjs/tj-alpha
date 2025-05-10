@@ -1,19 +1,46 @@
-import { TemplateResult } from 'lit';
+import {CSSResult, HTMLTemplateResult, TemplateResult} from 'lit';
 
-export type RegistryLoader = (current: HTMLElement, features: Map<string, string>) => TemplateResult<1>;
+export type TemplateApplication = {
+    /**
+     * The template result to be applied.
+     */
+    html: TemplateResult<1>;
+
+    css?: CSSResult | CSSResult[];
+
+    connectedCallback?: (current: HTMLElement, features: Map<string, string>) => void;
+    disconnectedCallback?: (current: HTMLElement, features: Map<string, string>) => void;
+}
+
+
+export type TemplateApplicationLoader = (current: HTMLElement, layout: Record<string, string>) => TemplateApplication;
 const sectionRegistryVersion = "1";
 
 declare global {
     interface Window {
-        __tj_section_registry_registered: Map<string, {version: string, loader: RegistryLoader}>;
+        __tj_section_registry_registered: Map<string, {version: string, loader: TemplateApplicationLoader}>;
     }
 }
 
 if (typeof window !== 'undefined') {
     if (!window.__tj_section_registry_registered) {
-        window.__tj_section_registry_registered = new Map<string, {version: string, loader: RegistryLoader}>();
+        window.__tj_section_registry_registered = new Map<string, {version: string, loader: TemplateApplicationLoader}>();
     }
 }
+
+
+export function register_template(id : string, template : TemplateApplication | TemplateApplicationLoader) {
+    // If template is not al loadder, convert it to a loader
+    if (template && typeof template === 'object' && 'template' in template) {
+        template = ((e, f) => template) as TemplateApplicationLoader;
+    }
+    if (window.__tj_section_registry_registered.has(id)) {
+        throw new Error(`Template with id ${id} already registered`);
+    }
+    window.__tj_section_registry_registered.set(id, {version: sectionRegistryVersion, loader: template as TemplateApplicationLoader});
+    console.log("Registered template", id, template);
+}
+
 
 /**
  * Usage
@@ -23,13 +50,20 @@ if (typeof window !== 'undefined') {
  *
  */
 export const sectionRegistry = new Proxy(
-    window.__tj_section_registry_registered as Map<string, { version: string, loader: RegistryLoader }>,
+    window.__tj_section_registry_registered as Map<string, { version: string, loader: TemplateApplicationLoader }>,
     {
-        get(target, prop: string) {
-            return (target.get(prop)?.loader) ?? undefined;
+        get(target, prop: string) : TemplateApplicationLoader {
+            if (target.get(prop) === undefined) {
+                throw new Error(`SectionRegistry: '${prop}' not found`);
+            }
+            return (target.get(prop)?.loader) as TemplateApplicationLoader;
         },
-        set(target, prop: string, value: RegistryLoader) {
-            target.set(prop, { version: sectionRegistryVersion, loader: value });
+        set(target, prop: string, value: TemplateApplicationLoader | TemplateApplication) {
+            let callback = value;
+            if (value && typeof value === 'object' && 'template' in value) {
+                callback = ((e, f) => value) as TemplateApplicationLoader;
+            }
+            target.set(prop, { version: sectionRegistryVersion, loader: callback as TemplateApplicationLoader });
             return true;
         },
         has(target, prop) {
@@ -42,5 +76,5 @@ export const sectionRegistry = new Proxy(
             return Array.from(target.keys());
         },
     }
-) as unknown as Record<string, RegistryLoader>;
+) as unknown as Record<string, TemplateApplicationLoader>;
 
