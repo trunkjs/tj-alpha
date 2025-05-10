@@ -26,7 +26,7 @@ export function applyLayout(node : HTMLElement) : HTMLElement | null {
         let replacementElement = null;
         if (use.startsWith("#")) {
             try {
-                replacementElement =  new TjSection(layoutHydrated, attributes, node.children);
+                replacementElement =  new TjSection({layout: layoutHydrated, attributes, content: node.children});
             } catch (e) {
                 console.error("Error creating section with use: ", use, "on node", node, "\n", e );
                 return null;

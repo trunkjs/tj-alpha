@@ -31,7 +31,6 @@ export class ContentArea extends ReactiveElement {
 
         await sleep(1);
 
-        console.log("ContentArea connectedCallback");
         let contentBuilder = new ContentBuilder(this as HTMLElement);
         contentBuilder.arrange(Array.from(this.children));
 

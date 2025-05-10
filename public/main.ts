@@ -21,10 +21,10 @@ register_template("#test1", (current: HTMLElement, layout: Record<string, string
     return {
         html: tpl,
         css: unsafeCSS(style),
-        connectedCallback: (current: HTMLElement, features: Map<string, string>) => {
+        connectedCallback: (current: HTMLElement, features: Record<string, string>) => {
             console.log("connected", current, features);
         },
-        disconnectedCallback: (current: HTMLElement, features: Map<string, string>) => {
+        disconnectedCallback: (current: HTMLElement, features: Record<string, string>) => {
             console.log("disconnected", current, features);
         }
     } as TemplateApplication

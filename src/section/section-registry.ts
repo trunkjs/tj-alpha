@@ -8,8 +8,12 @@ export type TemplateApplication = {
 
     css?: CSSResult | CSSResult[];
 
-    connectedCallback?: (current: HTMLElement, features: Map<string, string>) => void;
-    disconnectedCallback?: (current: HTMLElement, features: Map<string, string>) => void;
+
+    classes?: string[];
+    layout?: Record<string, string>;
+
+    connectedCallback?: (current: HTMLElement, features: Record<string, string>) => void;
+    disconnectedCallback?: (current: HTMLElement, features: Record<string, string>) => void;
 }
 
 
@@ -38,7 +42,6 @@ export function register_template(id : string, template : TemplateApplication | 
         throw new Error(`Template with id ${id} already registered`);
     }
     window.__tj_section_registry_registered.set(id, {version: sectionRegistryVersion, loader: template as TemplateApplicationLoader});
-    console.log("Registered template", id, template);
 }
 
 

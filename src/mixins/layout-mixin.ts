@@ -31,14 +31,14 @@ type AbstractConstructor<T = {}> = abstract new (...args: any[]) => T;
  *   // now has .layout: Record<string,string>
  * }
  */
-export function LayoutMixin<TBase extends AbstractConstructor<ReactiveElement>>(
+export function LayoutMixin<TBase extends AbstractConstructor<any>>(
     Base: TBase,
     options?: { allowedKeys?: string[] }
 ) : TBase & AbstractConstructor<{ layout: Record<string, string> }> {
 
 
     abstract class LayoutMixed extends Base {
-        public layout: Record<string, string> = {};
+        declare public layout: Record<string, string>;
 
         static get properties() {
             // Very important: Merge with base properties

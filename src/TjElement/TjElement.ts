@@ -1,6 +1,7 @@
 import {SlotsMixin, Slots} from "@/mixins/slots-mixin";
 import {LayoutMixin} from "@/mixins/layout-mixin";
 import {ReactiveElement} from "lit";
+import {ElementDefinition} from "@/tools/build-element";
 
 
 
@@ -8,7 +9,7 @@ import {ReactiveElement} from "lit";
 
 
 abstract class TjElement<TSlots extends Slots> extends SlotsMixin<TSlots>()(ReactiveElement) {
-    constructor(slots?: TSlots) {
+    constructor(definition?: ElementDefinition<any, any, any>) {
         super();
         this.slots = slots || {} as TestSlots;
     }
