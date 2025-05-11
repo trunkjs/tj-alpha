@@ -1,3 +1,24 @@
+import {Debouncer} from "@/tools/sleep";
+
+export function getCurrentBreakpoint(): string {
+    const width = window.innerWidth;
+    const breakpoints = {
+        xxl: 1400,
+        xl: 1200,
+        lg: 992,
+        md: 768,
+        sm: 576,
+        xs: 0,
+    };
+
+    for (const [key, value] of Object.entries(breakpoints)) {
+        if (width >= value) {
+            return key;
+        }
+    }
+    return "xs";
+}
+
 
 export class TjResponsive {
     private breakpoints: { [key: string]: number } = {
@@ -8,7 +29,7 @@ export class TjResponsive {
         xl: 1200,
         xxl: 1400,
     };
-    private mutationObserver: MutationObserver | null = null;
+
     private originalData = new WeakMap<HTMLElement, { classes: string; styles: string }>();
 
     constructor() {
@@ -23,19 +44,16 @@ export class TjResponsive {
      *
      * @param target HTMLElement to process
      */
-    adjust(target: HTMLElement): void {
+    public adjust(target: HTMLElement | ShadowRoot | Document): void {
         const elements: HTMLElement[] = [];
-        if (this.needsResponsiveProcessing(target)) {
+        if (target instanceof HTMLElement && this.needsResponsiveProcessing(target)) {
             elements.push(target);
+        } else if (target instanceof ShadowRoot) {
+            elements.push(...Array.from(target.querySelectorAll("*")).filter(el => this.needsResponsiveProcessing(el as HTMLElement)) as HTMLElement[]);
+        } else if (target instanceof Document) {
+            elements.push(...Array.from(target.querySelectorAll("*")).filter(el => this.needsResponsiveProcessing(el as HTMLElement)) as HTMLElement[]);
         }
 
-        const descendants = target.getElementsByTagName("*");
-        for (let i = 0; i < descendants.length; i++) {
-            const el = descendants[i] as HTMLElement;
-            if (this.needsResponsiveProcessing(el)) {
-                elements.push(el);
-            }
-        }
 
         elements.forEach(element => {
             if (!this.originalData.has(element)) {
@@ -74,14 +92,24 @@ export class TjResponsive {
         const newClasses = new Set<string>();
         const originalClasses = new Set(this.originalData.get(element)?.classes.split(/\s+/) || []);
 
-        classList.forEach(cls => {
+        originalClasses.forEach(cls => {
             const match = cls.match(/^(-?)([a-z]+)(?:-([a-z]+))?:(.+)$/);
 
             if (match) {
                 const [, negative, bp1, bp2, className] = match;
-                const minWidth = this.breakpoints[bp1];
-                const maxWidth = bp2 ? this.breakpoints[bp2] : undefined;
-                const qualifies = this.shouldApplyClass(width, negative, minWidth, maxWidth);
+                let minWidth = this.breakpoints[bp1];
+                let maxWidth = bp2 ? this.breakpoints[bp2] : undefined;
+
+                // Evaluate -xl:class for up to the breakpoint
+                if (!bp2 && !maxWidth && negative === "-") {
+                    minWidth = 0;
+                    maxWidth = this.breakpoints[bp1];
+                } else if (!bp2 && !maxWidth && negative !== "-") {
+                    minWidth = this.breakpoints[bp1];
+                    maxWidth = undefined;
+                }
+
+                const qualifies = this.shouldApplyClass(width, minWidth, maxWidth);
 
                 if (qualifies) {
                     newClasses.add(className);
@@ -116,14 +144,12 @@ export class TjResponsive {
     /**
      * Determines whether a class should be applied based on breakpoints.
      */
-    private shouldApplyClass(width: number, negative: string, minWidth: number, maxWidth?: number): boolean {
-        if (negative) {
-            return width < minWidth;
-        }
+    private shouldApplyClass(width: number, minWidth: number, maxWidth?: number): boolean {
+
         if (maxWidth !== undefined) {
-            return width >= minWidth && width <= maxWidth;
+            return width > minWidth && width <= maxWidth;
         }
-        return width >= minWidth;
+        return width > minWidth;
     }
 
     /**
@@ -131,22 +157,26 @@ export class TjResponsive {
      *
      * @param target HTMLElement to observe
      */
-    observe(target: HTMLElement): void {
-        if (this.mutationObserver) {
-            this.mutationObserver.disconnect();
-        }
-
-        this.mutationObserver = new MutationObserver(() => {
+    observe(target: HTMLElement | Document | ShadowRoot): void {
+        let debouncer = new Debouncer(500);
+        let currentBreakpoint = getCurrentBreakpoint();
+        window.addEventListener("resize", async ()=> {
+            await debouncer.wait();
+            if (currentBreakpoint === getCurrentBreakpoint()) {
+                return;
+            }
+            console.log("Responsive: Resize event detected: " + getCurrentBreakpoint());
+            currentBreakpoint = getCurrentBreakpoint();
             this.adjust(target);
         });
-
-        this.mutationObserver.observe(target, {
-            childList: true,
-            attributes: true,
-            subtree: true
-        });
+        this.adjust(target);
     }
 }
+
+
+
+
+
 
 
 declare global {

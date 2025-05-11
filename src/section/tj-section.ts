@@ -9,6 +9,7 @@ import {applyLayout} from "@/content-area/apply-layout";
 import {arrangeSlots} from "@/content-area/slot-maschine";
 import {TjDataElement} from "@/TjElement/TjDataElement";
 import {ElementDefinition, update_element} from "@/tools/build-element";
+import {TjResponsive} from "@/respnsive/responsive";
 
 
 
@@ -80,6 +81,8 @@ export class TjSection extends LayoutMixin(ReactiveElement, {allowedKeys: ['use'
         // The CSS Styles are set in connectedCallback below!
 
 
+        let responsiveParser = new TjResponsive();
+        responsiveParser.observe(this.shadowRoot!);
 
         arrangeSlots(this);
 

@@ -3,6 +3,7 @@ import {customElement} from "lit/decorators.js";
 import {ContentBuilder} from "@/content-area/content-builder";
 import {applyLayout} from "@/content-area/apply-layout";
 import {sleep} from "@/tools/sleep";
+import {TjResponsive} from "@/respnsive/responsive";
 
 
 @customElement('tj-content-area')
@@ -32,9 +33,19 @@ export class ContentArea extends ReactiveElement {
         await sleep(1);
 
         let contentBuilder = new ContentBuilder(this as HTMLElement);
-        contentBuilder.arrange(Array.from(this.children));
+        // Start with the first 3 children - wait and then add the rest
+
+        let children = Array.from(this.children);
+
+        contentBuilder.arrange(children);
+
+
 
         applyLayout(this);
 
+        let responsive = new TjResponsive();
+        responsive.observe(document);
+
+        //contentBuilder.arrange(rest);
     }
 }

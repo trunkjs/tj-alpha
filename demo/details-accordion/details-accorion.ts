@@ -9,7 +9,7 @@ register_template("#accordion-element", {
 
         html: (element, layout) => html`
         <details>
-            <summary part="summary"><slot name="summary" select="${layout["summary-selector"]}"></summary><slot id="main"></slot>
+            <summary style="background-color: red" xl-style="background-color: green" part="summary"><slot name="summary" select="${layout["summary-selector"]}"></summary><slot id="main"></slot>
         </details>`,
 
         css: unsafeCSS(style),
@@ -33,10 +33,6 @@ register_template("#accordion-element", {
             let summary = details.querySelector("summary") as HTMLElement;
             const mainSlot = details.querySelector("#main") as HTMLElement;
 
-
-            // init
-            console.log("connected", current, features);
-           // body.style.opacity   = details.open ? "1" : "0";
 
             mainSlot.addEventListener("transitionend", (e) => {
                 console.log("transitionend", e);
