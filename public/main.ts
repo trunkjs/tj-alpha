@@ -7,6 +7,8 @@ export {ContentArea} from "../src/content-area/content-area";
 import style from "./test1.scss?inline";
 import {qhtml} from "@/qhtml/qhtml";
 
+import "../demo/details-accordion/details-accorion";
+
 const tpl = html`
     <div class="test">
         <h1>Welcome Junge!</h1>
@@ -16,9 +18,8 @@ const tpl = html`
 `;
 
 
-register_template("#test1", (current: HTMLElement, layout: Record<string, string>) : TemplateApplication => {
+register_template("#test1", {
 
-    return {
         html: tpl,
         css: unsafeCSS(style),
         connectedCallback: (current: HTMLElement, features: Record<string, string>) => {
@@ -27,7 +28,6 @@ register_template("#test1", (current: HTMLElement, layout: Record<string, string
         disconnectedCallback: (current: HTMLElement, features: Record<string, string>) => {
             console.log("disconnected", current, features);
         }
-    } as TemplateApplication
 
 })
 

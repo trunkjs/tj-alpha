@@ -29,21 +29,55 @@ export class TjSection extends LayoutMixin(ReactiveElement, {allowedKeys: ['use'
     constructor(elementDefinition?: TjSectionDefinition) {
         super();
 
+        let use = elementDefinition?.layout?.use;
+        if (! use) {
+            throw new Error("The layout key 'use' is not set.");
+        }
+        let templateApplication = sectionRegistry[use];
+        this.templateApplication = templateApplication;
+
+
+
+        let layoutVars = elementDefinition?.layout || {} as any;
+        Object.keys(templateApplication.layout || {}).forEach((key) => {
+
+            if (layoutVars && layoutVars[key] !== undefined) {
+                return;
+            }
+            let defaultVal = templateApplication.layout![key].default;
+            if (typeof defaultVal === "function") {
+                defaultVal = defaultVal(key, this);
+            }
+            if (typeof defaultVal === "string") {
+                layoutVars[key] = defaultVal;
+            } else {
+                throw new Error("LayoutDefault must be a string or a function.");
+            }
+
+            // Check for publish
+            if (templateApplication.layout![key].publish) {
+                this.style.setProperty(`--layout-${key}`, layoutVars[key]);
+            }
+
+        })
+
         let shadowRoot = this.createRenderRoot();
         // Set attributes, layout and slots
         update_element(this, elementDefinition);
 
-        let use = this.layout["use"];
-        let tpl = sectionRegistry[use];
 
-        let templateApplication = tpl(this, {} as Record<string, string>) as TemplateApplication;
-        this.templateApplication = templateApplication;
 
         // Always set the name of the section as class
         this.setAttribute("class", use.substring(1) + " " + (this.getAttribute("class") ?? ""));
 
+
+        let html = templateApplication.html;
+        if (typeof html === "function") {
+            html = html(this, this.layout);
+        }
         //this.attachShadow({ mode: 'open' });
-        this.shadowRoot!.innerHTML = litTemplateToString(templateApplication.html);
+        this.shadowRoot!.innerHTML = litTemplateToString(html);
+        // The CSS Styles are set in connectedCallback below!
 
 
 

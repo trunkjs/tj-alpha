@@ -1,0 +1,54 @@
+:root {
+
+}
+
+/* Accordion (HTML <details><summary>) – alles via CSS-Variablen konfigurierbar */
+details {
+  /* Defaults → bei Bedarf überschreiben (.accordion { … }) */
+  --accordion-duration: .3s;        /* Animations­dauer       */
+  --indicator-flow: row;            /* row  = Icon rechts
+                                       row-reverse = Icon links */
+  --icon-open:  "\2212";            /* Minus   */
+  --icon-closed:"\002B";            /* Plus    */
+
+  /* ---------- Header ---------- */
+  summary {
+    cursor: pointer;
+    display: flex;
+    flex-direction: var(--indicator-flow);
+    align-items: center;
+    gap: .5rem;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }   /* Safari/Chrome */
+
+    &::after {
+      content: var(--icon-closed);
+      transition: transform var(--accordion-duration) ease;
+    }
+  }
+
+  &.open > summary::after {
+    content: var(--icon-open);
+    transform: rotate(180deg);
+  }
+
+    slot {
+      display: block;
+    }
+
+    /* --- body --- */
+    & > slot#main {
+        display: block;
+        overflow: hidden;
+        height: 0; /* Höhe wird via JS gesetzt */
+        opacity: 0;
+        transition: height .3s ease, opacity .3s ease;
+    }
+    &.open > slot#main {
+        opacity: 1;                  /* Höhe wird via JS gesetzt */
+        height: var(--accordion-max-height, 100vh);
+    }
+
+
+}

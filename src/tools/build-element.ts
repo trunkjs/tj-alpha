@@ -24,6 +24,18 @@ export function update_element(element : HTMLElement, definition : ElementDefini
     }
     // Set Layout
     if (definition.layout) {
+        let layout = definition.layout;
+        for(let key in definition.layout) {
+            let value = definition.layout[key];
+            if (typeof value === "function") {
+                value = value(element, definition);
+            }
+            if (typeof value === "string") {
+                layout[key] = value;
+            } else {
+                throw new Error("LayoutDefault must be a string or a function.");
+            }
+        }
         (element as any)["layout"] = definition.layout;
     }
 
