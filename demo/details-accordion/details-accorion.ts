@@ -1,6 +1,6 @@
 import style from "./details-accorion.scss?inline";
 import {html, unsafeCSS} from "lit";
-import {register_template, TemplateApplication, TemplateResultCallback} from "../../src/section/section-registry";
+import {register_template, TemplateApplication, TemplateResultCallback} from "@/content-area/section-registry";
 
 
 

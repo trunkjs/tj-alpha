@@ -1,5 +1,5 @@
 import {hydrateKeyValueString} from "@/tools/key-value-string-parser";
-import {TjSection} from "@/section/tj-section";
+import {TjSection} from "@/content-area/tj-section";
 
 export function applyLayout(node : HTMLElement) : HTMLElement | null {
     let attributes : Record<string, string> = {};

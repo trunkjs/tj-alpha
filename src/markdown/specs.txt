@@ -1,0 +1,7 @@
+Implement a markdown parser / serializer that can handle the github flavored markdown / kramdown in the
+same way jekyll does. It should render handle all elements the same way that jekyll does. It should also
+save the whitesspace so the output is the same as the input.
+
+It should use TokenReader to read the markdown input.
+
+

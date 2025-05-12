@@ -5,6 +5,12 @@ export type TokenReaderValue = {
     column: number;
 }
 
+export type ReadUntilPeekResult = {
+    value: string;
+    // False if eof reached
+    peek: string | false;
+}
+
 /**
  * TokenReader provides utilities to read tokens like words, expressions, and quoted strings from a line input.
  *
@@ -14,8 +20,13 @@ export type TokenReaderValue = {
  */
 export class TokenReader {
     private line: string;
-    private index: number = 0;
+    private _index: number = 0;
     private lineNumber: number;
+
+
+    public get index (): number {
+        return this._index;
+    }
 
     /**
      * Creates a TokenReader instance.
@@ -31,6 +42,33 @@ export class TokenReader {
         this.lineNumber = lineNumber;
     }
 
+
+    protected isWhitespace(ch: string | null): boolean {
+        return ch === ' ' || ch === '\t' || ch === '\r' || ch === '\n' || ch === '\f' || ch === '\v' || ch === null;
+    }
+
+
+
+
+
+    /**
+     * Reads all whitespace characters until a non-whitespace character is encountered.
+     *
+     * @param multiline
+     */
+    public readWhiteSpace(multiline : boolean = true): string {
+        let buf = '';
+        while (!this.isEOF()) {
+            let nextChar = this.peek(1);
+
+            if (nextChar === '\n' && !multiline) {
+                break;
+            }
+            buf += this.readChar();
+        }
+        return buf;
+    }
+
     /**
      * Checks if the reading position has reached the end of the line.
      *
@@ -40,7 +78,7 @@ export class TokenReader {
      * reader.isEOF(); // false
      */
     public isEOF(): boolean {
-        return this.index >= this.line.length;
+        return this._index >= this.line.length;
     }
 
     /**
@@ -48,7 +86,7 @@ export class TokenReader {
      * Handles quoted strings and numbers.
      *
      */
-    public readValue(stopChar = ";"): TokenReaderValue | null {
+    public readValue(stopChar : string | RegExp = ";"): TokenReaderValue | null {
         this.skipWhitespace();
         if (this.isEOF()) return null;
 
@@ -56,7 +94,7 @@ export class TokenReader {
             value_str: '',
             value_number: null,
             quoted: false,
-            column: this.index
+            column: this._index
         }
 
         // Read quoted string
@@ -69,7 +107,7 @@ export class TokenReader {
             if (this.isNextChar(quote)) {
                 this.readChar(); // consume the closing quote
             } else {
-                throw new Error(this.failmsg(`Unterminated string starting at index ${this.index}`));
+                throw new Error(this.failmsg(`Unterminated string starting at index ${this._index}`));
             }
             return ret;
         }
@@ -95,8 +133,19 @@ export class TokenReader {
      * @example
      * reader.peekChar(); // 'a'
      */
-    public peekChar(): string | null {
-        return this.isEOF() ? null : this.line[this.index];
+public peekChar(length: number = 1): string | null {
+    if (this.isEOF()) return null;
+    return this.line.substr(this._index, length);
+}
+
+    /**
+     * Peeks at the next n characters without advancing the position.
+     * @param length
+     * @param offset
+     */
+    public peek(length: number = 1, offset : number = 0): string | null {
+        if (this.isEOF()) return null;
+        return this.line.substring(this._index + offset, this._index + offset + length);
     }
 
     /**
@@ -109,19 +158,23 @@ export class TokenReader {
      */
     public readChar(): string | null {
         if (this.isEOF()) return null;
-        return this.line[this.index++];
+        return this.line[this._index++];
     }
 
     /**
      * Reads characters until a specified stop character is encountered or EOF.
+     * Will not read the stop character.
+     *
      * @param stopChar
      */
-    public readUntil(stopChar : string) : string {
+    public readUntil(stopChar : string | RegExp) : string {
         let buf = '';
         while (!this.isEOF()) {
             const ch = this.readChar();
-            if (ch === stopChar) break;
+            const nextChar = this.peekChar();
             buf += ch;
+            if (typeof stopChar === "string" && nextChar === stopChar) break;
+            if (stopChar instanceof RegExp && stopChar.test(nextChar ?? "")) break;
         }
         return buf;
     }
@@ -133,10 +186,40 @@ export class TokenReader {
      * reader.skipWhitespace();
      */
     public skipWhitespace(): void {
-        while (!this.isEOF() && /\s/.test(this.line[this.index])) {
-            this.index++;
+        while (!this.isEOF() && /\s/.test(this.line[this._index])) {
+            this._index++;
         }
     }
+
+    /**
+     * Reads until one of the words (also multiple chars) are reached. Will not read the peek word.
+     *
+     * @param stopPeek
+     * @param multiline
+     */
+    public readUntilPeek(stopPeek: string[], multiline: boolean = true): ReadUntilPeekResult {
+        let buf = '';
+        while (!this.isEOF()) {
+            for (const peekWord of stopPeek) {
+                if (this.peek(peekWord.length) === peekWord) {
+                    return {
+                        value: buf,
+                        peek: peekWord
+                    };
+                }
+            }
+            const ch = this.readChar();
+            if (ch === '\n' && !multiline) {
+                break;
+            }
+            buf += ch;
+        }
+        return {
+            value: buf,
+            peek: false
+        };
+    }
+
 
     /**
      * Reads a word consisting of alphanumeric or underscore characters.
@@ -152,8 +235,8 @@ export class TokenReader {
         if (this.isEOF()) return null;
 
         let word = '';
-        while (!this.isEOF() && wordRegex.test(this.line[this.index])) {
-            word += this.line[this.index++];
+        while (!this.isEOF() && wordRegex.test(this.line[this._index])) {
+            word += this.line[this._index++];
         }
         return word;
     }
@@ -171,12 +254,12 @@ export class TokenReader {
     public readExpression(expectedExpressions: string[] = []): string | null {
         this.skipWhitespace();
         if (this.isEOF()) return null;
-        const start = this.index;
+        const start = this._index;
         let expression : string|null = null;
         for(let curExpression of expectedExpressions) {
-            if (this.line.startsWith(curExpression, this.index)) {
+            if (this.line.startsWith(curExpression, this._index)) {
                 expression = curExpression;
-                this.index += expression.length;
+                this._index += expression.length;
                 break;
             }
         }
@@ -211,7 +294,7 @@ export class TokenReader {
         }
 
         if (escaped) {
-            throw new Error(this.failmsg(`Unterminated string starting at index ${this.index}`));
+            throw new Error(this.failmsg(`Unterminated string starting at index ${this._index}`));
         }
         return str;
     }
@@ -226,7 +309,7 @@ export class TokenReader {
      * throw new Error(reader.failmsg('Unexpected character'));
      */
     public failmsg(msg: string): string {
-        return `Line ${this.lineNumber}, Col ${this.index + 1}: ${msg}`;
+        return `Line ${this.lineNumber}, Col ${this._index + 1}: ${msg}`;
     }
 
     /**
@@ -251,7 +334,7 @@ export class TokenReader {
      * const saved = reader.saveIndex();
      */
     public saveIndex(): number {
-        return this.index;
+        return this._index;
     }
 
     /**
@@ -263,7 +346,7 @@ export class TokenReader {
      * reader.restoreIndex(saved);
      */
     public restoreIndex(saved: number): void {
-        this.index = saved;
+        this._index = saved;
     }
 
 }

@@ -2,7 +2,7 @@ import {HTMLTemplateResult, ReactiveElement} from "lit";
 import {property} from "lit/decorators.js";
 import {hydrateKeyValueString} from "@/tools/key-value-string-parser";
 import {LayoutMixin} from "@/mixins/layout-mixin";
-import {sectionRegistry, TemplateApplication} from "@/section/section-registry";
+import {sectionRegistry, TemplateApplication} from "@/content-area/section-registry";
 import {customElement} from "lit/decorators.js";
 import {litTemplateToString} from "@/tools/lit-tools";
 import {applyLayout} from "@/content-area/apply-layout";

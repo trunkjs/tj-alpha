@@ -1,5 +1,5 @@
 import "./test.scss";
-import {register_template, sectionRegistry, TemplateApplication} from "@/section/section-registry";
+import {register_template, sectionRegistry, TemplateApplication} from "@/content-area/section-registry";
 import {css, html, unsafeCSS} from "lit";
 export {ContentArea} from "../src/content-area/content-area";
 
