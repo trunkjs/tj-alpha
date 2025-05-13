@@ -1,9 +1,4 @@
-
-
-
-
-
-
+import {KramdownElement} from "@/markdown/parse-kramdown";
 
 
 export type MarkdownInlineElement = {
@@ -26,6 +21,7 @@ export type MarkdownInlineElement = {
 
 export type MarkdownBlockElement = {
     type: "paragraph" | "heading" | "list" | "code" | "quote" | "link" | "image" | "table" | "html" | "whitespace" | null;
+    heading_level?: number;
     pre_whitespace: string;
     post_whitespace: string;
     kramdown: null | KramdownElement[];

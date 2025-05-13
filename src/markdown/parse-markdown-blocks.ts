@@ -36,6 +36,11 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
             }
             if (current_line.startsWith("#")) {
                 current.type = "heading";
+                // count how many # are in the line
+                current.heading_level = 1;
+                while (current_line[current.heading_level] === "#") {
+                    current.heading_level++;
+                }
             } else if (current_line.startsWith("-")) {
                 current.type = "list";
             } else if (current_line.startsWith("```")) {
