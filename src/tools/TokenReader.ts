@@ -28,6 +28,10 @@ export class TokenReader {
         return this._index;
     }
 
+    public set index (value: number) {
+        this._index = value;
+    }
+
     /**
      * Creates a TokenReader instance.
      *
@@ -79,6 +83,10 @@ export class TokenReader {
      */
     public isEOF(): boolean {
         return this._index >= this.line.length;
+    }
+
+    public more(): boolean {
+        return this._index < this.line.length;
     }
 
     /**
@@ -166,8 +174,9 @@ public peekChar(length: number = 1): string | null {
      * Will not read the stop character.
      *
      * @param stopChar
+     * @param includePeek - If true, includes the peek character in the result.
      */
-    public readUntil(stopChar : string | RegExp) : string {
+    public readUntil(stopChar : string | RegExp, includePeek : boolean = false) : string {
         let buf = '';
         while (!this.isEOF()) {
             const ch = this.readChar();
@@ -175,6 +184,9 @@ public peekChar(length: number = 1): string | null {
             buf += ch;
             if (typeof stopChar === "string" && nextChar === stopChar) break;
             if (stopChar instanceof RegExp && stopChar.test(nextChar ?? "")) break;
+        }
+        if (includePeek && !this.isEOF()) {
+            buf += this.readChar();
         }
         return buf;
     }
