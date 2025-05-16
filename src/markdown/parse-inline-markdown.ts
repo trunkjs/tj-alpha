@@ -11,6 +11,45 @@ type InlineMarkdownElement = {
 }
 
 
+function readLinkOrImageFromCurrentPosition(tr: TokenReader): InlineMarkdownElement {
+    let type = tr.readExpression(["[", "!["]);
+    if (type === null) {
+        return {
+            type: "text",
+            content: tr.readUntil("]")
+        };
+    }
+    let ret: InlineMarkdownElement = {
+        type: null
+    };
+
+    ret.type = type === "[" ? "link" : "image";
+    let content = readLinkOrImageFromCurrentPosition(tr);
+
+    ret.content = [content];
+    tr.readChar();
+    if (tr.peekChar() !== "(") {
+        // Missing (...)
+        return {
+            type: "text",
+            content: ret.content
+        };
+    }
+    tr.readChar();
+    ret.href = tr.readUntil(")");
+
+    tr.readChar();
+    if (tr.peek() === "{") {
+        let kramdownResult = parse_kramdown(tr.line.substring(tr.index));
+        ret.kramdown = kramdownResult.elements;
+        tr.index += kramdownResult.kramdown_length;
+    }
+
+    return ret;
+}
+
+
+
 
 function formatMarkdown(input: string): string {
     return input
@@ -33,57 +72,15 @@ export function parse_inline_markdown(input : string) : InlineMarkdownElement[] 
 
 
     while (tr.more()) {
-        const start = tr.readUntilPeek(["<", "[", "!["], true);
+        const start = tr.readUntilPeek(["[", "!["], true);
         if (start.value !== "") {
             ret.push({
                 type: "text",
                 content: start.value
             });
         }
-        let element : InlineMarkdownElement = {
-            type: null
-        }
-        switch (start.peek) {
-            case "<":
-                let html = tr.readUntil(">", true);
-
-                if (html !== "") {
-                    ret.push({
-                        type: "html",
-                        content: html
-                    });
-                }
-                break;
-            case "![":
-                element.type = "image";
-            case "[":
-                if (element.type === null) {
-                    element.type = "link";
-                }
-                let content = tr.readUntil("]");
-
-                tr.readChar();
-                if (tr.peekChar() !== "(") {
-                    element.content = content;
-                    break;
-                }
-                tr.readChar();
-                let href = tr.readUntil(")");
-                if (element.type === "link") {
-                    element.content = parse_inline_markdown(content);
-                }
-                tr.readChar();
-                if (tr.peek() === "{") {
-                    let kramdownResult = parse_kramdown(input.substring(tr.index));
-                    element.kramdown = kramdownResult.elements;
-                    tr.index += kramdownResult.kramdown_length;
-                }
-                ret.push(element);
-                break;
-
-
-            default:
-                throw new Error("Unknown token: " + start.peek);
+        if (start.peek !== false) {
+            ret.push(readLinkOrImageFromCurrentPosition(tr));
         }
 
     }

@@ -1,3 +1,5 @@
+import util from 'util';
+
 export type TokenReaderValue = {
     value_str: string;
     value_number: number | null;
@@ -19,10 +21,16 @@ export type ReadUntilPeekResult = {
  * const word = tr.readWord(); // 'foo'
  */
 export class TokenReader {
-    private line: string;
+    private _line: string;
     private _index: number = 0;
     private lineNumber: number;
 
+
+    get __debugInfo(): any {
+        return {
+            rest: this._line.substring(this.index)
+        }
+    }
 
     public get index (): number {
         return this._index;
@@ -30,6 +38,10 @@ export class TokenReader {
 
     public set index (value: number) {
         this._index = value;
+    }
+
+    public get line (): string {
+        return this._line;
     }
 
     /**
@@ -42,7 +54,7 @@ export class TokenReader {
      * const reader = new TokenReader('some text here', 5);
      */
     constructor(input: string, lineNumber = 1) {
-        this.line = input;
+        this._line = input;
         this.lineNumber = lineNumber;
     }
 
@@ -82,11 +94,11 @@ export class TokenReader {
      * reader.isEOF(); // false
      */
     public isEOF(): boolean {
-        return this._index >= this.line.length;
+        return this._index >= this._line.length;
     }
 
     public more(): boolean {
-        return this._index < this.line.length;
+        return this._index < this._line.length;
     }
 
     /**
@@ -141,10 +153,10 @@ export class TokenReader {
      * @example
      * reader.peekChar(); // 'a'
      */
-public peekChar(length: number = 1): string | null {
-    if (this.isEOF()) return null;
-    return this.line.substr(this._index, length);
-}
+    public peekChar(length: number = 1): string | null {
+        if (this.isEOF()) return null;
+        return this._line.substr(this._index, length);
+    }
 
     /**
      * Peeks at the next n characters without advancing the position.
@@ -153,7 +165,7 @@ public peekChar(length: number = 1): string | null {
      */
     public peek(length: number = 1, offset : number = 0): string | null {
         if (this.isEOF()) return null;
-        return this.line.substring(this._index + offset, this._index + offset + length);
+        return this._line.substring(this._index + offset, this._index + offset + length);
     }
 
     /**
@@ -166,7 +178,7 @@ public peekChar(length: number = 1): string | null {
      */
     public readChar(): string | null {
         if (this.isEOF()) return null;
-        return this.line[this._index++];
+        return this._line[this._index++];
     }
 
     /**
@@ -198,7 +210,7 @@ public peekChar(length: number = 1): string | null {
      * reader.skipWhitespace();
      */
     public skipWhitespace(): void {
-        while (!this.isEOF() && /\s/.test(this.line[this._index])) {
+        while (!this.isEOF() && /\s/.test(this._line[this._index])) {
             this._index++;
         }
     }
@@ -226,6 +238,7 @@ public peekChar(length: number = 1): string | null {
             }
             buf += ch;
         }
+
         return {
             value: buf,
             peek: false
@@ -247,8 +260,8 @@ public peekChar(length: number = 1): string | null {
         if (this.isEOF()) return null;
 
         let word = '';
-        while (!this.isEOF() && wordRegex.test(this.line[this._index])) {
-            word += this.line[this._index++];
+        while (!this.isEOF() && wordRegex.test(this._line[this._index])) {
+            word += this._line[this._index++];
         }
         return word;
     }
@@ -269,7 +282,7 @@ public peekChar(length: number = 1): string | null {
         const start = this._index;
         let expression : string|null = null;
         for(let curExpression of expectedExpressions) {
-            if (this.line.startsWith(curExpression, this._index)) {
+            if (this._line.startsWith(curExpression, this._index)) {
                 expression = curExpression;
                 this._index += expression.length;
                 break;

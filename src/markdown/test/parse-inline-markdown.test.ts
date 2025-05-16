@@ -47,23 +47,9 @@ describe('parse_inline_markdown – edge-cases', () => {
 
         // first node is the formatted text
         expect(ast[0].type).toBe('text');
-        expect(ast[0].content).toBe("Start ");
-
-        // trailing html token (<br>)
-        expect(ast[1].type).toBe('html');
-        expect(ast[1].content).toBe('<strong>');
+        expect(ast[0].content).toBe("Start <strong>bold</strong> and <em>em</em> and <strong>strong</strong> and <em>emph</em> and <code>code</code> and <del>del</del><br>");
     });
 
-    it('parses raw inline HTML correctly', () => {
-        const md = 'alpha <span>beta</span> gamma<br>';
-        const ast = parse_inline_markdown(md);
-
-        expect(ast[0]).toMatchObject({ type: 'text', content: 'alpha ' });
-        expect(ast[1]).toMatchObject({ type: 'html', content: '<span>' });
-        expect(ast[2]).toMatchObject({ type: 'text', content: 'beta' });
-        expect(ast[3]).toMatchObject({ type: 'html', content: '</span>' });
-        expect(ast[4]).toMatchObject({ type: 'text', content: ' gamma' });
-    });
 
     it('parses links that contain formatting & HTML in their label', () => {
         const md =
@@ -80,6 +66,21 @@ describe('parse_inline_markdown – edge-cases', () => {
         );
     });
 
+    it('parses kramdown for links', () => {
+        const md =
+            '[text](https://example.com){: .class1}<br>';
+        const ast = parse_inline_markdown(md);
+
+        const link = ast[0];
+        expect(link.kramdown).toStrictEqual([
+            {
+                "value": "class1",
+                "valueType": "class",
+            },
+        ]);
+
+    });
+
     it('supports an image nested inside a link', () => {
         const md =
             '[![Alt Text](image.png)](https://example.com)<br>';
@@ -90,7 +91,7 @@ describe('parse_inline_markdown – edge-cases', () => {
 
         const inner = link.content as InlineMarkdownElement[];
         expect(inner[0].type).toBe('image');
-        expect(inner[0].content).toBe('Alt Text');
+        expect(inner[0].content).toEqual([{type: "text", content: 'Alt Text'}]);
     });
 
     it('handles multi-line strong emphasis', () => {
@@ -98,6 +99,6 @@ describe('parse_inline_markdown – edge-cases', () => {
         const ast = parse_inline_markdown(md);
 
         const txt = ast[0].content as string;
-        expect(txt).toBe('<strong>Hello\nWorld</strong>');
+        expect(txt).toBe('<strong>Hello\nWorld</strong><br>');
     });
 });
