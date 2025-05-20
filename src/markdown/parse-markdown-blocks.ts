@@ -1,5 +1,24 @@
 import {MarkdownBlockElement} from "@/markdown/types";
 import {TokenReader} from "@/tools/TokenReader";
+import {KramdownElement, parse_kramdown} from "@/markdown/parse-kramdown";
+import {ulLiBlockParser} from "@/markdown/ul-li-block-parser";
+import {parse_inline_markdown} from "@/markdown/parse-inline-markdown";
+
+
+
+function parseKramdown(current: MarkdownBlockElement) : void {
+    current.content_raw = current.content_raw.trim();
+
+    const clines = current.content_raw.split("\n");
+    if (clines.length > 0) {
+        if (clines[clines.length - 1].startsWith("{:")) {
+            const lastLine = clines.pop() as string;
+            current.content_raw = clines.join("\n");
+            current.kramdown = parse_kramdown(lastLine).elements;
+        }
+    }
+}
+
 
 export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
     const tr = new TokenReader(input);
@@ -11,7 +30,7 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
     let line = 0;
     let pre_whitespace = "";
 
-    const readBlock = () => {
+    const readBlock = () : MarkdownBlockElement => {
         let current : MarkdownBlockElement = {
             type: null,
             pre_whitespace: pre_whitespace,
@@ -26,13 +45,32 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
             let current_line = lines[line];
             line++;
             if (current_line.trim() === "" && current.type !== "code") {
+                if (current.type === "list") {
+                    current.children = ulLiBlockParser(current);
+                } else if (current.type === "paragraph") {
+                    current.children = parse_inline_markdown(current.content_raw);
+                }
                 document.push(current);
-                return; // end of block
+                return current; // end of block
             }
             if (current.type === "code" && current_line.trim() === "```") {
                 current.content_raw += current_line + "\n";
                 document.push(current);
-                return; // end of code block
+                return current; // end of code block
+            }
+            if (current_line.startsWith("<!--")) {
+                current.type = "comment";
+                current.content_raw += current_line + "\n";
+                while (line < lines.length) {
+                    current_line = lines[line];
+                    line++;
+                    current.content_raw += current_line + "\n";
+                    if (current_line.endsWith("-->")) {
+                        break;
+                    }
+                }
+                document.push(current);
+                return current; // end of html block
             }
             if (current_line.startsWith("#")) {
                 current.type = "heading";
@@ -47,15 +85,20 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
                 current.type = "code";
             } else if (current_line.startsWith(">")) {
                 current.type = "quote";
+                current.content_raw = current_line.substring(1).trim();
+                continue;
             } else if (current_line.startsWith("<")) {
                 current.type = "html";
             } else if (current.type === null) {
                 current.type = "paragraph";
             }
             current.content_raw += current_line + "\n";
+
         }
-        document.push(current);
+        return current; // end of block
     }
+
+
 
     while (line < lines.length) {
         let current_line = lines[line];
@@ -66,7 +109,10 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
             pre_whitespace += "\n";
             continue;
         }
-        readBlock();
+        let be = readBlock();
+        parseKramdown(be)
+
+
     }
     // Add whitespace to the last block - if this block does not exist - create a whitespace block
     if (document.length === 0) {

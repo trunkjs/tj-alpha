@@ -2,8 +2,8 @@ import {KramdownElement, parse_kramdown} from "@/markdown/parse-kramdown";
 import {TokenReader} from "@/tools/TokenReader";
 
 
-type InlineMarkdownElement = {
-    type: 'text' | 'link' | 'image' | 'whitespace' | 'html' | null;
+export type InlineMarkdownElement = {
+    type: 'text' | 'link' | 'image' | 'whitespace' | 'html' | 'list-item' | 'u-list' | 'o-list' | null;
     href?: string | null;
     alt?: string | null;
     content?: string | InlineMarkdownElement[];
@@ -24,9 +24,12 @@ function readLinkOrImageFromCurrentPosition(tr: TokenReader): InlineMarkdownElem
     };
 
     ret.type = type === "[" ? "link" : "image";
-    let content = readLinkOrImageFromCurrentPosition(tr);
+    ret.content = [];
+    if (tr.peekChar() !== "]") {
+        let content = readLinkOrImageFromCurrentPosition(tr);
+        ret.content = [content];
+    }
 
-    ret.content = [content];
     tr.readChar();
     if (tr.peekChar() !== "(") {
         // Missing (...)

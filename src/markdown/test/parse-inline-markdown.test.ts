@@ -81,6 +81,29 @@ describe('parse_inline_markdown – edge-cases', () => {
 
     });
 
+    it('parses images with kramdown', () => {
+        const md =
+            '![text](image.png){: .class1}';
+        const ast = parse_inline_markdown(md);
+
+        const img = ast[0];
+        expect(img.type).toBe('image');
+        expect(img.kramdown).toStrictEqual([
+            {
+                "value": "class1",
+                "valueType": "class",
+            },
+        ]);
+    });
+    it('parses images with empty alt text', () => {
+        const md =
+            '![](image.png)';
+        const ast = parse_inline_markdown(md);
+
+        const img = ast[0];
+        expect(img.type).toBe('image');
+
+    });
     it('supports an image nested inside a link', () => {
         const md =
             '[![Alt Text](image.png)](https://example.com)<br>';
