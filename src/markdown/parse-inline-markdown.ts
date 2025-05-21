@@ -3,7 +3,7 @@ import {TokenReader} from "@/tools/TokenReader";
 
 
 export type InlineMarkdownElement = {
-    type: 'text' | 'link' | 'image' | 'whitespace' | 'html' | 'list-item' | 'u-list' | 'o-list' | null;
+    type: 'text' | 'link' | 'image' | 'whitespace' | 'html' | 'list-item' | 'u-list' | 'o-list' | 'table-head' | 'table-body' | 'table-footer' | 'table-cell' | null;
     href?: string | null;
     alt?: string | null;
     content?: string | InlineMarkdownElement[];
@@ -50,6 +50,7 @@ function readLinkOrImageFromCurrentPosition(tr: TokenReader): InlineMarkdownElem
 
     return ret;
 }
+
 
 
 

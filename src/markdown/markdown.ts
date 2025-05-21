@@ -16,6 +16,6 @@ export class MarkdownDocument {
 
     public getHTML() : HTMLDivElement {
         let html = astToHtml(this._ast);
-        return html.firstElementChild as HTMLDivElement;
+        return html;
     }
 }

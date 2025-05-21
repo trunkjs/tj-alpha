@@ -3,6 +3,7 @@ import {TokenReader} from "@/tools/TokenReader";
 import {KramdownElement, parse_kramdown} from "@/markdown/parse-kramdown";
 import {ulLiBlockParser} from "@/markdown/ul-li-block-parser";
 import {parse_inline_markdown} from "@/markdown/parse-inline-markdown";
+import { tableBlockParser } from "@/markdown/table-block-parser";
 
 
 
@@ -49,6 +50,8 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
                     current.children = ulLiBlockParser(current);
                 } else if (current.type === "paragraph") {
                     current.children = parse_inline_markdown(current.content_raw);
+                } else if (current.type === "table") {
+                    current.children = tableBlockParser(current);
                 }
                 document.push(current);
                 return current; // end of block
@@ -82,7 +85,10 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
             } else if (current_line.startsWith("-")) {
                 current.type = "list";
             } else if (current_line.startsWith("```")) {
+
                 current.type = "code";
+            } else if (current_line.startsWith("|")) {
+                current.type = "table";
             } else if (current_line.startsWith(">")) {
                 current.type = "quote";
                 current.content_raw = current_line.substring(1).trim();

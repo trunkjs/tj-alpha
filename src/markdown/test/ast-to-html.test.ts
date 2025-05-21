@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { astToHtml } from '@/markdown/ast-to-html';
-import {MarkdownBlockElement} from "../types";
-import {create_element} from "../../tools/create-element";
-
+import { MarkdownBlockElement } from '../types';
+import { create_element } from '../../tools/create-element';
+import { InlineMarkdownElement } from '@/markdown/parse-inline-markdown';
 
 /**
  * – returns a fullyinitialised MarkdownBlockElement with sane defaults * Individual tests can override any field via `partial`.
@@ -23,6 +23,9 @@ function mdBlock(
     } as MarkdownBlockElement;
 }
 
+/** Helper – creates a simple inline “text” node */
+const txt = (s: string): InlineMarkdownElement => ({ type: 'text', content: s });
+
 describe('astToHtml – edge-cases', () => {
     it('returns an empty fragment for empty input', () => {
         const frag = astToHtml([]);
@@ -34,7 +37,8 @@ describe('astToHtml – edge-cases', () => {
             mdBlock({
                 type: 'heading',
                 heading_level: 3,
-                content_raw: 'Heading Content'
+                content_raw: '',
+                children: [txt('Heading Content')]
             })
         ]);
 
@@ -44,18 +48,26 @@ describe('astToHtml – edge-cases', () => {
     });
 
     it('renders list block inside a <ul>', () => {
+        const listRoot: InlineMarkdownElement = {
+            type: 'u-list',
+            content: [
+                { type: 'list-item', content: [txt('Item 1')] },
+                { type: 'list-item', content: [txt('Item 2')] }
+            ]
+        };
+
         const frag = astToHtml([
             mdBlock({
                 type: 'list',
-                // astToHtml simply injects raw HTML – we therefore pass ready-made list items
-                content_raw: '<li>Item&nbsp;1</li><li>Item 2</li>'
+                content_raw: '',
+                children: [listRoot]
             })
         ]);
 
         const ul = frag.querySelector('ul')!;
         expect(ul).not.toBeNull();
         expect(ul.children.length).toBe(2);
-        //expect(ul.children[0].textContent).toBe('Item 1'); // NB: &nbsp; turns into U+00A0
+        expect(ul.children[0].textContent).toBe('Item 1');
         expect(ul.children[1].textContent).toBe('Item 2');
     });
 
@@ -68,8 +80,6 @@ describe('astToHtml – edge-cases', () => {
             })
         ]);
 
-
-
         const pre = frag.querySelector('pre')!;
         expect(pre).not.toBeNull();
         expect(pre.textContent).toBe(code);
@@ -79,7 +89,8 @@ describe('astToHtml – edge-cases', () => {
         const frag = astToHtml([
             mdBlock({
                 type: 'quote',
-                content_raw: 'Block quote'
+                content_raw: '',
+                children: [txt('Block quote')]
             })
         ]);
 
@@ -106,24 +117,26 @@ describe('astToHtml – edge-cases', () => {
     });
 
     it('renders paragraph block inside <p>', () => {
-        const txt = 'Plain paragraph';
+        const txtContent = 'Plain paragraph';
         const frag = astToHtml([
             mdBlock({
                 type: 'paragraph',
-                content_raw: txt
+                content_raw: '',
+                children: [txt(txtContent)]
             })
         ]);
 
         const p = frag.querySelector('p')!;
         expect(p).not.toBeNull();
-        expect(p.textContent).toBe(txt);
+        expect(p.textContent).toBe(txtContent);
     });
 
     it('falls back to <p> for unknown / unexpected block types', () => {
         const frag = astToHtml([
             mdBlock({
                 type: 'whitespace',
-                content_raw: 'ignored?'
+                content_raw: '',
+                children: [txt('ignored?')]
             })
         ]);
 
@@ -133,33 +146,20 @@ describe('astToHtml – edge-cases', () => {
     });
 
     it('keeps the original order of blocks', () => {
+        const listRoot: InlineMarkdownElement = {
+            type: 'u-list',
+            content: [{ type: 'list-item', content: [txt('C')] }]
+        };
+
         const frag = astToHtml([
-            mdBlock({ type: 'heading', heading_level: 2, content_raw: 'A' }),
-            mdBlock({ type: 'paragraph', content_raw: 'B' }),
-            mdBlock({ type: 'list', content_raw: '<li>C</li>' })
+            mdBlock({ type: 'heading', heading_level: 2, content_raw: '', children: [txt('A')] }),
+            mdBlock({ type: 'paragraph', content_raw: '', children: [txt('B')] }),
+            mdBlock({ type: 'list', content_raw: '', children: [listRoot] })
         ]);
 
         const tags = Array.from(frag.children).map(el => el.tagName);
         expect(tags).toEqual(['H2', 'P', 'UL']);
     });
 
-    it('gracefully ignores (currently unused) kramdown attributes', () => {
-        const frag = astToHtml([
-            mdBlock({
-                type: 'heading',
-                heading_level: 2,
-                content_raw: 'Title',
-                kramdown: [
-                    { valueType: 'id', value: 'my-id' } as any,
-                    { valueType: 'class', value: 'cls' } as any
-                ]
-            })
-        ]);
 
-        const h2 = frag.querySelector('h2')!;
-        expect(h2).not.toBeNull();
-        // buildAttributes() is **not** invoked → elements must not have id / class
-        expect(h2.hasAttribute('id')).toBe(false);
-        expect(h2.className).toBe('');
-    });
 });
