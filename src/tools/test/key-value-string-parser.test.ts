@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hydrateKeyValueString, dehydrateKeyValueString } from './key-value-string-parser';
+import { hydrateKeyValueString, dehydrateKeyValueString } from '../key-value-string-parser';
 
 describe('hydrateKeyValueString', () => {
     it('parses simple key-value pairs', () => {

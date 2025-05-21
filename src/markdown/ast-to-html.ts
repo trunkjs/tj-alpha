@@ -4,6 +4,7 @@ import {
     InlineMarkdownElement,
     parse_inline_markdown,
 } from "@/markdown/parse-inline-markdown";
+import { KramdownElement } from "@/markdown/parse-kramdown";
 
 /**
  * Build a plain attribute-map from a block’s kramdown information.
@@ -30,6 +31,31 @@ function buildAttributes(element: MarkdownBlockElement): Record<string, string> 
 }
 
 /**
+ * Build attribute-map for inline-elements (link / img) based on kramdown.
+ */
+function buildInlineAttributes(kram: KramdownElement[] | null | undefined): Record<string, string> {
+    const ret: Record<string, string> = {};
+    for (const curAttr of kram ?? []) {
+        if (curAttr.valueType === "id") {
+            ret["id"] = curAttr.value ?? "";
+            continue;
+        }
+
+        if (curAttr.valueType === "class") {
+            if (!ret["class"]) ret["class"] = curAttr.value ?? "";
+            else ret["class"] += " " + curAttr.value;
+            continue;
+        }
+
+        if (curAttr.valueType === "attribute") {
+            if (!ret[curAttr.key!]) ret[curAttr.key!] = curAttr.value ?? "";
+            else ret[curAttr.key!] += " " + (curAttr.value ?? "");
+        }
+    }
+    return ret;
+}
+
+/**
  * Helper – sets all attributes from the provided map on a HTMLElement.
  */
 function applyAttributes(el: HTMLElement, attrs: Record<string, string>) {
@@ -41,6 +67,11 @@ function applyAttributes(el: HTMLElement, attrs: Record<string, string>) {
  * Only implements the subset required by the accompanying unit-tests.
  */
 function inlineToHtml(nodes: InlineMarkdownElement[] = []): string {
+    const attrsToString = (map: Record<string, string>): string =>
+        Object.keys(map)
+            .map((k) => ` ${k}="${map[k]}"`)
+            .join("");
+
     let out = "";
     for (const n of nodes) {
         switch (n.type) {
@@ -50,16 +81,21 @@ function inlineToHtml(nodes: InlineMarkdownElement[] = []): string {
             case "html":
                 out += `<${n.content}>`;
                 break;
-            case "link":
-                out += `<a href="${n.href ?? ""}">${inlineToHtml(
+            case "link": {
+                const attrs = buildInlineAttributes(n.kramdown);
+                attrs["href"] = n.href ?? "";
+                out += `<a${attrsToString(attrs)}>${inlineToHtml(
                     n.content as InlineMarkdownElement[]
                 )}</a>`;
                 break;
-            case "image":
-                out += `<img src="${n.href ?? ""}" alt="${inlineToHtml(
-                    n.content as InlineMarkdownElement[]
-                )}">`;
+            }
+            case "image": {
+                const attrs = buildInlineAttributes(n.kramdown);
+                attrs["src"] = n.href ?? "";
+                // Do NOT add alt attribute by default (as per instructions)
+                out += `<img${attrsToString(attrs)}>`;
                 break;
+            }
             default:
                 // unsupported inline type → ignore
                 break;
@@ -68,9 +104,9 @@ function inlineToHtml(nodes: InlineMarkdownElement[] = []): string {
     return out;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────── */
 /*  List helpers                                                             */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────── */
 
 function renderList(root: InlineMarkdownElement): HTMLElement {
     const tag = root.type === "o-list" ? "ol" : "ul";
@@ -103,9 +139,9 @@ function renderList(root: InlineMarkdownElement): HTMLElement {
     return listEl;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────── */
 /*  Table helpers                                                            */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────── */
 
 function renderTable(block: MarkdownBlockElement): HTMLTableElement {
     const table = document.createElement("table");
@@ -161,16 +197,16 @@ function renderTable(block: MarkdownBlockElement): HTMLTableElement {
     return table;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────── */
 /*  Main renderer                                                            */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────── */
 
 export function astToHtml(input: MarkdownBlockElement[]): HTMLDivElement {
     const fragment = document.createElement("div") as HTMLDivElement;
 
     for (const block of input) {
         switch (block.type) {
-            /* ─────────────── Headings ─────────────── */
+            /* ──────────────────────────────── Headings ──────────────────────────────── */
             case "heading": {
                 const level = block.heading_level ?? 1;
                 const h = document.createElement("h" + level);
@@ -179,34 +215,24 @@ export function astToHtml(input: MarkdownBlockElement[]): HTMLDivElement {
 
                 if (block.children && block.children.length) {
                     h.innerHTML = inlineToHtml(block.children);
-                } else {
-                    // Fallback – strip leading # markers and parse inline
-                    const text = block.content_raw
-                        .replace(/^#+\s*/, "")
-                        .trim();
-                    h.innerHTML = inlineToHtml(parse_inline_markdown(text));
                 }
                 fragment.appendChild(h);
                 break;
             }
 
-            /* ─────────────── Paragraphs ───────────── */
+            /* ─────────────────────────────── Paragraphs ─────────────────────────────── */
             case "paragraph": {
                 const p = document.createElement("p");
                 applyAttributes(p, buildAttributes(block));
 
                 if (block.children && block.children.length) {
                     p.innerHTML = inlineToHtml(block.children);
-                } else {
-                    p.innerHTML = inlineToHtml(
-                        parse_inline_markdown(block.content_raw.trim())
-                    );
                 }
                 fragment.appendChild(p);
                 break;
             }
 
-            /* ─────────────── Lists ───────────── */
+            /* ───────────────────────────────── Lists ────────────────────────────────── */
             case "list": {
                 const lists = block.children as InlineMarkdownElement[];
                 if (!lists || lists.length === 0) break;
@@ -221,62 +247,65 @@ export function astToHtml(input: MarkdownBlockElement[]): HTMLDivElement {
                 break;
             }
 
-            /* ─────────────── Tables ───────────── */
+            /* ──────────────────────────────── Tables ───────────────────────────────── */
             case "table": {
                 const tableEl = renderTable(block);
                 fragment.appendChild(tableEl);
                 break;
             }
 
-            /* ─────────────── Code blocks ───────────── */
+            /* ───────────────────────────── Code blocks ─────────────────────────────── */
             case "code": {
                 const pre = document.createElement("pre");
                 const code = document.createElement("code");
                 applyAttributes(pre, buildAttributes(block));
-                code.textContent = block.content_raw;
+                code.textContent = block.children![0].content as string;
                 pre.appendChild(code);
                 fragment.appendChild(pre);
                 break;
             }
 
-            /* ─────────────── Block quotes ───────────── */
+            /* ───────────────────────────── Block quotes ────────────────────────────── */
             case "quote": {
                 const bq = document.createElement("blockquote");
                 applyAttributes(bq, buildAttributes(block));
 
                 if (block.children && block.children.length) {
                     bq.innerHTML = inlineToHtml(block.children);
-                } else {
-                    bq.innerHTML = inlineToHtml(
-                        parse_inline_markdown(block.content_raw.trim())
-                    );
                 }
                 fragment.appendChild(bq);
                 break;
             }
 
-            /* ─────────────── Raw HTML ───────────── */
+            /* ─────────────────────────────── Raw HTML ──────────────────────────────── */
             case "html": {
                 const tmp = document.createElement("div");
-                tmp.innerHTML = block.content_raw;
+                tmp.innerHTML = block.children![0].content as string;
                 for (const child of Array.from(tmp.children)) {
                     fragment.appendChild(child);
                 }
                 break;
             }
 
-            /* ─────────────── Whitespace / unknown – treat as paragraph ───────────── */
+            case "comment": {
+                const tmp = document.createTextNode("<!-- " + block.children![0].content + " -->");
+                fragment.appendChild(tmp);
+                break;
+            }
+
+            /* ────────────── Whitespace / unknown – fallback to <p> ─────────────────── */
             default: {
                 const p = document.createElement("p");
                 applyAttributes(p, buildAttributes(block));
-                p.innerHTML = inlineToHtml(
-                    block.children && block.children.length
-                        ? block.children
-                        : parse_inline_markdown(block.content_raw.trim())
-                );
+                if (block.children && block.children.length) {
+                    p.innerHTML = inlineToHtml(block.children);
+                }
                 fragment.appendChild(p);
             }
         }
+        // Append Whitespace to the dom
+
+        fragment.appendChild(document.createTextNode((block.post_whitespace ?? "") + "\n\n"));
     }
 
     return fragment;

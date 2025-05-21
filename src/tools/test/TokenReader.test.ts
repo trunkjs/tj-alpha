@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TokenReader } from './TokenReader';
+import { TokenReader } from '../TokenReader';
 
 describe('TokenReader', () => {
     it('should read individual words properly', () => {

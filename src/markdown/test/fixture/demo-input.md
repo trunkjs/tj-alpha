@@ -19,9 +19,11 @@ this has special class name
 This is a paragraph with [a link](/link){: .btn }
 {: .class1}
 
-<html>
+<div>
     <block></block>
-</html>
+</div>
+
+Ohter Pragraph
 
 Paragraph with <b>bold</b> text and <i>italic</i> text.
 

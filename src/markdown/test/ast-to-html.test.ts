@@ -76,7 +76,7 @@ describe('astToHtml – edge-cases', () => {
         const frag = astToHtml([
             mdBlock({
                 type: 'code',
-                content_raw: code
+                children: [{ type: 'text', content: code, lang: 'js' }],
             })
         ]);
 
@@ -104,7 +104,7 @@ describe('astToHtml – edge-cases', () => {
         const frag = astToHtml([
             mdBlock({
                 type: 'html',
-                content_raw: raw
+                children: [{ type: 'html', content: raw }],
             })
         ]);
 

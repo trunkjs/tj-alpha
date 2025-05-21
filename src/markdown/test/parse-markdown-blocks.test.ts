@@ -6,12 +6,11 @@ function types(seq: MarkdownBlockElement[]) {
     return seq.map(b => b.type);
 }
 
-describe('parse_markdown_blocks ‑ edge-cases', () => {
+describe('parse_markdown_blocks – edge-cases', () => {
 
-    it('returns a single “whitespace” block for an empty string', () => {
+    it('returns a no “whitespace” block for an empty string', () => {
         const ast = parse_markdown_blocks('');
-        expect(ast.length).toBe(1);
-        expect(ast[0].type).toBe('whitespace');
+        expect(ast.length).toBe(0);
     });
 
     it('returns a single “whitespace” block for only blank lines', () => {
@@ -25,8 +24,16 @@ describe('parse_markdown_blocks ‑ edge-cases', () => {
         const ast = parse_markdown_blocks(md);
 
         expect(types(ast)).toEqual(['heading', 'paragraph']);
-        expect(ast[0].content_raw.trim()).toBe('# Heading 1');
-        expect(ast[1].content_raw.trim()).toBe('This is a paragraph.');
+        expect(ast[0].children![0].content).toBe('Heading 1');
+        expect(ast[1].children![0].content).toBe('This is a paragraph.');
+    });
+
+    it('parses quotes correctly', () => {
+        const md = '> This is a quote\n> This is the next line of a quote.';
+        const ast = parse_markdown_blocks(md);
+
+        expect(types(ast)).toEqual(['quote']);
+        expect(ast[0].children![0].content).toBe('This is a quote\nThis is the next line of a quote.');
     });
 
     it('parses unordered lists', () => {
@@ -34,18 +41,17 @@ describe('parse_markdown_blocks ‑ edge-cases', () => {
         const ast = parse_markdown_blocks(md);
 
         expect(types(ast)).toEqual(['list', 'paragraph']);
-        expect(ast[0].content_raw.trim()).toBe('- item 1\n- item 2');
+        expect(ast[0].children![0].type).toBe('u-list');
     });
 
     it('parses code fences and keeps inner content verbatim', () => {
-        const md = '```\nconsole.log(\"hi\");\n```\n\nNext.';
+        const md = '```\nconsole.log("hi");\n```\n\nNext.';
         const ast = parse_markdown_blocks(md);
 
         expect(types(ast)).toEqual(['code', 'paragraph']);
         const code = ast[0];
-        expect(code.content_raw.startsWith('```')).toBe(true);
-        expect(code.content_raw.includes('console.log("hi");')).toBe(true);
-        expect(code.content_raw.trim().endsWith('```')).toBe(true);
+        const inner = (code.children![0].content as string).trim();
+        expect(inner).toBe('console.log("hi");');
     });
 
     it('parses blockquotes', () => {
@@ -53,7 +59,7 @@ describe('parse_markdown_blocks ‑ edge-cases', () => {
         const ast = parse_markdown_blocks(md);
 
         expect(types(ast)).toEqual(['quote', 'paragraph']);
-        expect(ast[0].content_raw.trim()).toBe('> quoted line');
+        expect((ast[0].children![0].content as string).trim()).toBe('> quoted line');
     });
 
     it('collects leading blank lines into pre_whitespace of first block', () => {
@@ -71,7 +77,7 @@ describe('parse_markdown_blocks ‑ edge-cases', () => {
         const last = ast[ast.length - 1];
         expect(last.type).toBe('heading');
         // single newline between heading & EOF → should end up as post_whitespace
-        expect(last.post_whitespace).toBe('\n');
+        expect(last.post_whitespace).toBe('');
     });
 
     it('handles consecutive paragraphs without blank lines as a single block', () => {
@@ -79,9 +85,29 @@ describe('parse_markdown_blocks ‑ edge-cases', () => {
         const ast = parse_markdown_blocks(md);
 
         expect(types(ast)).toEqual(['paragraph', 'paragraph']);
-        expect(ast[0].content_raw.trim()).toBe('first line\nsecond line');
-        expect(ast[1].content_raw.trim()).toBe('third paragraph');
+        expect((ast[0].children![0].content as string).trim()).toBe('first line\nsecond line');
+        expect((ast[1].children![0].content as string).trim()).toBe('third paragraph');
     });
+
+
+    it ("parses html tags correctly", () => {
+        const md = "<div><a>This his html</a> This is a div </div>\n\nThis is a paragraph.";
+        const ast = parse_markdown_blocks(md);
+
+        expect(types(ast)).toEqual(['html', 'paragraph']);
+        expect(ast[0].children![0].content).toBe('<div><a>This his html</a> This is a div </div>');
+        expect(ast[1].children![0].content).toBe('This is a paragraph.');
+    });
+
+
+    it ("parses html comments correctly", () => {
+        const md = "<!-- This is a comment -->\n\nThis is a paragraph.";
+        const ast = parse_markdown_blocks(md);
+
+        expect(types(ast)).toEqual(['comment', 'paragraph']);
+        expect(ast[0].children![0].content).toBe(' This is a comment ');
+        expect(ast[1].children![0].content).toBe('This is a paragraph.');
+    })
 
     it('handles a code block without closing fence (edge-case) – ends at EOF', () => {
         const md = '```\nlet x = 1;';
@@ -90,7 +116,19 @@ describe('parse_markdown_blocks ‑ edge-cases', () => {
         // According to current implementation this yields a single code-block ending at EOF
         expect(ast.length).toBe(1);
         expect(ast[0].type).toBe('code');
-        expect(ast[0].content_raw.startsWith('```')).toBe(true);
-        expect(ast[0].content_raw.trim().endsWith('let x = 1;')).toBe(true);
+        const inner = (ast[0].children![0].content as string).trim();
+        expect(inner).toBe('let x = 1;');
+    });
+
+    it("handles kramdown attributes correclty", () => {
+        const md = `# Title \n{: #id .class }`;
+        const ast = parse_markdown_blocks(md);
+
+        expect(ast.length).toBe(1);
+        expect(ast[0].type).toBe("heading");
+        expect(ast[0].heading_level).toBe(1);
+        expect(ast[0].children![0].content).toBe("Title");
+        expect(ast[0].kramdown).toBeDefined();
+
     });
 });

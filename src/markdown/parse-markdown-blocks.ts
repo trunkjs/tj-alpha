@@ -4,134 +4,124 @@ import {KramdownElement, parse_kramdown} from "@/markdown/parse-kramdown";
 import {ulLiBlockParser} from "@/markdown/ul-li-block-parser";
 import {parse_inline_markdown} from "@/markdown/parse-inline-markdown";
 import { tableBlockParser } from "@/markdown/table-block-parser";
+import {PeekType, TokenReader2} from "@/tools/TokenReader2";
 
 
 
-function parseKramdown(current: MarkdownBlockElement) : void {
-    current.content_raw = current.content_raw.trim();
 
-    const clines = current.content_raw.split("\n");
-    if (clines.length > 0) {
-        if (clines[clines.length - 1].startsWith("{:")) {
-            const lastLine = clines.pop() as string;
-            current.content_raw = clines.join("\n");
-            current.kramdown = parse_kramdown(lastLine).elements;
+
+
+function readBlocks(input: string) : string[] {
+    const tr = new TokenReader2(input);
+    let blocks: string[] = [];
+    let firstblock = true;
+    while(tr.hasMore()) {
+        let ret = tr.readUntil(/\n\n(```|<!--|\S)/m, PeekType.Peek);
+        blocks.push((firstblock ? "\n\n" : "") + ret.content);
+        firstblock = false;
+        switch(ret.match) {
+            case "\n\n```":
+                let curData = tr.read(5);
+                curData += tr.readUntil("```", PeekType.Include).content;
+                blocks.push(curData);
+                break;
+            case "\n\n<!--":
+                blocks.push(tr.readUntil("-->", PeekType.Include).content);
+                break;
+            default:
+                tr.read(2);
+                break;
+
         }
     }
+    return blocks;
 }
 
 
-export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
-    const tr = new TokenReader(input);
 
+export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
     let document : MarkdownBlockElement[] = [];
 
+    let blocks = readBlocks(input);
 
-    let lines = input.split("\n");
-    let line = 0;
     let pre_whitespace = "";
 
-    const readBlock = () : MarkdownBlockElement => {
-        let current : MarkdownBlockElement = {
-            type: null,
-            pre_whitespace: pre_whitespace,
-            post_whitespace: "",
-            content_raw: "",
-            kramdown: null,
-            start_line: 0,
-            children: []
-        }
-        pre_whitespace = ""; // reset pre_whitespace for the next block
-        while (line < lines.length) {
-            let current_line = lines[line];
-            line++;
-            if (current_line.trim() === "" && current.type !== "code") {
-                if (current.type === "list") {
-                    current.children = ulLiBlockParser(current);
-                } else if (current.type === "paragraph") {
-                    current.children = parse_inline_markdown(current.content_raw);
-                } else if (current.type === "table") {
-                    current.children = tableBlockParser(current);
-                }
-                document.push(current);
-                return current; // end of block
-            }
-            if (current.type === "code" && current_line.trim() === "```") {
-                current.content_raw += current_line + "\n";
-                document.push(current);
-                return current; // end of code block
-            }
-            if (current_line.startsWith("<!--")) {
-                current.type = "comment";
-                current.content_raw += current_line + "\n";
-                while (line < lines.length) {
-                    current_line = lines[line];
-                    line++;
-                    current.content_raw += current_line + "\n";
-                    if (current_line.endsWith("-->")) {
-                        break;
-                    }
-                }
-                document.push(current);
-                return current; // end of html block
-            }
-            if (current_line.startsWith("#")) {
-                current.type = "heading";
-                // count how many # are in the line
-                current.heading_level = 1;
-                while (current_line[current.heading_level] === "#") {
-                    current.heading_level++;
-                }
-            } else if (current_line.startsWith("-")) {
-                current.type = "list";
-            } else if (current_line.startsWith("```")) {
-
-                current.type = "code";
-            } else if (current_line.startsWith("|")) {
-                current.type = "table";
-            } else if (current_line.startsWith(">")) {
-                current.type = "quote";
-                current.content_raw = current_line.substring(1).trim();
-                continue;
-            } else if (current_line.startsWith("<")) {
-                current.type = "html";
-            } else if (current.type === null) {
-                current.type = "paragraph";
-            }
-            current.content_raw += current_line + "\n";
-
-        }
-        return current; // end of block
-    }
-
-
-
-    while (line < lines.length) {
-        let current_line = lines[line];
-
-        // Check for blank lines
-        if (current_line.trim() === "") {
-            line++;
-            pre_whitespace += "\n";
+    for (let curBlock of blocks) {
+        if (curBlock === "") {
             continue;
         }
-        let be = readBlock();
-        parseKramdown(be)
+        if (curBlock.trim() === "") {
+            pre_whitespace += curBlock;
+            continue;
+        }
+        let tr = new TokenReader2(curBlock);
 
-
-    }
-    // Add whitespace to the last block - if this block does not exist - create a whitespace block
-    if (document.length === 0) {
-        document.push({
-            type: "whitespace",
-            pre_whitespace: "",
+        let block: MarkdownBlockElement = {
+            type: null,
+            pre_whitespace: pre_whitespace + tr.readWhiteSpace(),
+            content_raw: tr.rest,
             post_whitespace: "",
-            content_raw: "",
-            kramdown: null,
-            start_line: 0,
-            children: []
-        });
+        };
+        pre_whitespace = "";
+
+        let content = tr.rest;
+        let contentArr = content.split("\n");
+        if (contentArr[contentArr.length - 1].startsWith("{:")) {
+            block.kramdown = parse_kramdown(contentArr.pop() as string).elements;
+            content = contentArr.join("\n");
+        }
+        let peekResult = tr.peek(["<!--", "```", "#", "-", "|", "<", ">"]);
+        switch (peekResult) {
+            case "<!--":
+                block.type = "comment";
+                content = content.substring(4, content.length - 3);
+                block.children = [{type: "text", content}]
+                break;
+            case "```":
+                block.type = "code";
+                let lang = contentArr[0].substring(3).trim();
+                contentArr.shift();
+                if (contentArr[contentArr.length - 1].endsWith("```")) {
+                    contentArr.pop();
+                }
+
+                block.children = [{type: "text", content: contentArr.join("\n"), lang}];
+                break;
+            case "#":
+                block.type = "heading";
+                block.heading_level = content.split(" ")[0].length;
+                block.children = parse_inline_markdown(content.substring(block.heading_level).trim());
+                break;
+            case "-":
+            case "*":
+            case "+":
+                block.type = "list";
+                block.children = ulLiBlockParser(block);
+                break;
+            case "|":
+                block.type = "table";
+                block.children = tableBlockParser(block);
+                break;
+            case "<":
+                block.type = "html";
+                block.children = [{type: "html", content: content}];
+                break;
+            case ">":
+                block.type = "quote";
+                // Remove trailing ">" from every line
+                content = content.split("\n").map(line => line.replace(/^>\s*/, "")).join("\n");
+                block.children = parse_inline_markdown(content);
+                break;
+            default:
+                block.type = "paragraph";
+                block.children = parse_inline_markdown(content);
+        }
+
+        document.push(block);
     }
-    document[document.length - 1].post_whitespace = pre_whitespace;
+
+    if (pre_whitespace !== "") {
+        document.push({"type": "whitespace", pre_whitespace: pre_whitespace});
+    }
     return document;
 }

@@ -6,6 +6,7 @@ export type InlineMarkdownElement = {
     type: 'text' | 'link' | 'image' | 'whitespace' | 'html' | 'list-item' | 'u-list' | 'o-list' | 'table-head' | 'table-body' | 'table-footer' | 'table-cell' | null;
     href?: string | null;
     alt?: string | null;
+    lang?: string | null;
     content?: string | InlineMarkdownElement[];
     kramdown?: KramdownElement[] | null;
 }

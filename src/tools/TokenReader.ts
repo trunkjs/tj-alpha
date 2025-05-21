@@ -203,6 +203,42 @@ export class TokenReader {
         return buf;
     }
 
+    private escapeRegExp(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    }
+
+    public readUntilPeekRegex(peek : string | string[] | RegExp, includePeek = false) : { content: string; match: string | null }
+    {
+        let regex: RegExp;
+        let input = this._line.substring(this._index);
+
+        let result = "";
+        if (peek instanceof RegExp) {
+            regex = new RegExp(peek.source, peek.flags.includes('s') ? peek.flags : peek.flags + 's');
+        } else {
+            const pattern = Array.isArray(peek)
+                ? peek.map(str => this.escapeRegExp(str)).join('|')
+                : this.escapeRegExp(peek);
+            regex = new RegExp(pattern, 's');
+        }
+
+        const match = input.match(regex);
+        if (!match || match.index === undefined) {
+            this.index += input.length;
+            return { content: input, match: null };
+        }
+        result = input.slice(0, match.index);
+        this._index += match.index;
+        if (includePeek) {
+            result += match[0];
+            this._index += match[0].length;
+        }
+        return {
+            content: result,
+            match: match[0]
+        };
+    }
+
     /**
      * Skips any whitespace characters (spaces, tabs, newlines).
      *
