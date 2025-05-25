@@ -139,4 +139,19 @@ export class MPugAstParser {
     }
 
 
+    public parseDocument(lines: string[]): MPugAstDocument {
+        const nodes: MPugAstNode[] = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line === "") continue; // Skip empty lines
+            const node = this.parseLine(line, i + 1);
+            nodes.push(node);
+        }
+        return {
+            type: 'document',
+            children: nodes,
+        };
+    }
+
+
 }
