@@ -4,11 +4,23 @@ environments:
     coder:
         files:
             - name: "project files"
+              enabled: false
               include:
                   - "./composer.json"
                   - "./.editorconfig"
                   - "./src/**/*.(php|ts|js)"
                   - "./www/**/*"
+                  - "./vite.config.js"
+              instructions: |
+                  These are all project files. You can edit them as you like.
+
+            - name: "project files"
+              enabled: true
+              include:
+
+                  - "./src/mpug/*.*"
+                  - "./src/tools/TokenReader2.ts"
+                  - "./src/tools/IndentMapper.js"
                   - "./vite.config.js"
               instructions: |
                   These are all project files. You can edit them as you like.

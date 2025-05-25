@@ -4,6 +4,13 @@ export async function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// language=pug
+let c = `
+doctype html
+div(class="container")
+    hi(*for="x of items" *for="y of items" @item="this.mama" :item="manila") Hello Word
+`;
+
 export class Debouncer {
     private timeout: NodeJS.Timeout | null = null;
 

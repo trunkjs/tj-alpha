@@ -1,0 +1,10 @@
+div#container
+    p This is a simple PUG template.
+    div.container
+        h1 Hello, World!
+
+        | Hello
+        p#id1.class1(data-attrib="some text") This is escaped text with an attribute.
+        != '<div></div>'
+        #id2.class2 !<strong> This is unescaped html.</strong>
+    p This is a <span>nested</span> element.

@@ -1,15 +1,40 @@
-
-
 export enum PeekType {
+    /**
+     * Include the match in the result
+     * This will position the index after the match
+     */
     Include,
+
+    /**
+     * Exclude the match from the result
+     * This will position the index after the match
+     */
     Exclude,
+
+    /**
+     * Peek without consuming the match
+     * Index stays at the start of the match
+        */
     Peek
 }
 
+export type PrimitiveResult = {
+    value: string;
+    delimiter: string | null;
+    isMultiline?: boolean;
+}
+
+ type LanguageConfig = {
+    booleanLiterals?: string[];
+    numberPattern?: string;
+    stringDelimiters?: string[];
+    escapeCharacter?: string;
+}
 
 
-
-
+const htmlPrimitive: LanguageConfig = {
+    stringDelimiters: ['"', "'"],
+}
 
 export class TokenReader2 {
 
@@ -17,6 +42,13 @@ export class TokenReader2 {
     private _index: number = 0;
     private _curLine: number = 0;
     private _curColumn: number = 0;
+
+    /**
+     * Returns the rest of the string from the current index.
+     */
+    public get rest(): string {
+        return this._string.substring(this._index);
+    }
 
     constructor(string: string) {
         this._string = string;
@@ -37,9 +69,7 @@ export class TokenReader2 {
         return this._string;
     }
 
-    public get rest(): string {
-        return this._string.substring(this._index);
-    }
+
 
     public get length(): number {
         return this._string.length;
@@ -98,6 +128,15 @@ export class TokenReader2 {
     private escapeRegExp(string: string): string {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
     }
+
+    /**
+     * Will read until the first occurrence of the peek string or regex.
+     *
+     * Will set the pointer to the position after the match (if type is Exclude or Include) or before the match (if type is Peek).
+     *
+     * @param peek
+     * @param type
+     */
     public readUntil(peek : string | string[] | RegExp, type : PeekType = PeekType.Exclude) : { content: string; match: string | null }
     {
         let input = this._string.substring(this._index);
@@ -125,6 +164,59 @@ export class TokenReader2 {
             match: match[0]
         };
     }
+
+
+    private triggerError(expected : string | string[], found: string, postion : number, message : string = ''): never {
+        if (!Array.isArray(expected)) {
+            expected = [expected];
+        }
+        throw new Error(`Error at position ${postion}: Expected "${expected.join(", ")}", found "${found}". ${message}`);
+    }
+
+    public readPrimitive(options: LanguageConfig = htmlPrimitive): PrimitiveResult {
+        const delimiters = options.stringDelimiters ?? [];
+        const escapeChar  = options.escapeCharacter;
+        const startChar = this.peek(1);
+
+        // Ensure we start with a valid delimiter
+        if (!startChar || !delimiters.includes(startChar)) {
+            this.triggerError(delimiters, startChar ?? "<end of input>", this._index, "No valid string delimiter found");
+        }
+
+        // Consume opening delimiter
+        this.read(1);
+
+        let valueBuffer = "";
+        while (this.hasMore()) {
+            const ch = this.read(1);
+
+            // Handle escape character
+            if (escapeChar && ch === escapeChar) {
+                if (!this.hasMore()) {
+                    this.triggerError(escapeChar, "<end of string>", this._index, "Escape character at end of string");
+                }
+                // Consume next character literally
+                valueBuffer += this.read(1);
+                continue;
+            }
+
+            // Handle closing delimiter
+            if (ch === startChar) {
+                return {
+                    value: valueBuffer,
+                    delimiter: startChar,
+                    isMultiline: valueBuffer.includes("\n")
+                };
+            }
+
+            // Regular character
+            valueBuffer += ch;
+        }
+
+        // If loop exited, no closing delimiter found
+        this.triggerError(startChar, "<end of string>", this._index, "End of string reached without closing delimiter");
+    }
+
 
     public read(num : number = 1) {
         let input = this._string.substring(this._index);

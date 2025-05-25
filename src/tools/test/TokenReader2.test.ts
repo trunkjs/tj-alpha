@@ -161,3 +161,54 @@ describe('TokenReader2 – helper methods', () => {
         expect(r.peek(1)).toBe(':');
     });
 });
+
+/* ------------------------------------------------------------------ */
+/*  Tests for readPrimitive                                           */
+/* ------------------------------------------------------------------ */
+describe('TokenReader2.readPrimitive', () => {
+    it('parses a simple double-quoted string', () => {
+        const r = new TokenReader2('"Hello"');
+        const res = r.readPrimitive({ stringDelimiters: ['"'] });
+        expect(res.value).toBe('Hello');
+        expect(res.delimiter).toBe('"');
+        expect(r.isEnd()).toBe(true);
+    });
+
+    it('parses a simple single-quoted string', () => {
+        const r = new TokenReader2("'World'");
+        const res = r.readPrimitive({ stringDelimiters: [`'`] });
+        expect(res.value).toBe('World');
+        expect(res.delimiter).toBe("'");
+        expect(r.isEnd()).toBe(true);
+    });
+
+    it('supports escape characters inside the string', () => {
+        const r = new TokenReader2('"a \\"quoted\\" value"');
+        const res = r.readPrimitive({ stringDelimiters: ['"'], escapeCharacter: '\\' });
+        expect(res.value).toBe('a "quoted" value');
+        expect(r.isEnd()).toBe(true);
+    });
+
+    it('throws when escape character appears at end of input', () => {
+        const src = '"broken' + '\\';
+        const r = new TokenReader2(src);
+        expect(() => r.readPrimitive({ stringDelimiters: ['"'], escapeCharacter: '\\' })).toThrow();
+    });
+
+    it('throws when string is not closed', () => {
+        const r = new TokenReader2(`"no end`);
+        expect(() => r.readPrimitive({ stringDelimiters: ['"'] })).toThrow();
+    });
+
+    it('throws when called on a position that is not a delimiter', () => {
+        const r = new TokenReader2('NoQuote');
+        expect(() => r.readPrimitive({ stringDelimiters: ['"'] })).toThrow();
+    });
+
+    it('works with custom delimiter characters', () => {
+        const r = new TokenReader2('`template`');
+        const res = r.readPrimitive({ stringDelimiters: ['`'] });
+        expect(res.value).toBe('template');
+        expect(res.delimiter).toBe('`');
+    });
+});
