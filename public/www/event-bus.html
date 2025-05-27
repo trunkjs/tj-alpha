@@ -1,0 +1,27 @@
+<html>
+<head>
+    <title>Message Bus</title>
+</head>
+<body>
+    <h3>Message Bus</h3>
+
+
+<script type="module" src="/public/main.ts"></script>
+<script type="module">
+    import {MessageBusUser} from "../../src/event-bus/example-event";
+
+    const usr = new MessageBusUser()
+    usr.setupListener()
+
+    await usr.emitExampleEventDontWait('test')
+    await usr.emitExampleEventDontWait('test2')
+
+    usr.unsubscribe();
+
+    await usr.emitExampleEventDontWait('test3')
+    await usr.emitExampleEventDontWait('test4')
+
+
+</script>
+</body>
+</html>
