@@ -1,0 +1,21 @@
+
+
+1.5:div.box.class2;attribute1: 'attval'; attribute2: 'attval';enabled
+=> i= 1.5 tag: 'div' inlineclass: 'box class2 attributes: {
+  attribute1: 'attval',
+  attribute2: 'attval',
+  enabled: true
+}'
+
++1.5:div.box.class2
+=> i= +1.5 tag: 'div' inlineclass: 'box class2'
+
+
+div.box.class1;attribute1: 'attval'; attribute2: 'attval'
+=> i= null tag: 'div' inlineclass: 'box class attributes: {
+  attribute1: 'attval',
+  attribute2: 'attval'
+}
+
+2:.box
+=> i=2 tag: null inlineclass: 'box'

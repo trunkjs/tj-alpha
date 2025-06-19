@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ElementI } from '../element-i';
+import { ElementI } from '../ElementI';
 
 describe('ElementI', () => {
     it('should parse plain number string as float and convert to int internally', () => {

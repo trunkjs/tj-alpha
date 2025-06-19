@@ -34,6 +34,9 @@ export function applyLayout(node : HTMLElement) : HTMLElement | null {
 
         } else {
             replacementElement = document.createElement(use);
+            for(let attributeName in attributes) {
+                replacementElement.setAttribute(attributeName, attributes[attributeName]);
+            }
         }
         // Append all children to the new element
         while (node.firstChild) {

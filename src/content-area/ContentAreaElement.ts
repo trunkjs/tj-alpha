@@ -7,7 +7,7 @@ import {TjResponsive} from "@/respnsive/responsive";
 
 
 @customElement('tj-content-area')
-export class ContentArea extends ReactiveElement {
+export class ContentAreaElement extends ReactiveElement {
     static get is() {
         return 'content-area';
     }

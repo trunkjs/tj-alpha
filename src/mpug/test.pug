@@ -2,9 +2,9 @@ div#container
     p This is a simple PUG template.
     div.container
         // Repeat stuff
-        div.item(*for="item in items" *for="index in item.indices" *if="item.visible" @click="this.itemClicked(item)" ?boolAttribute="item.isTrue()")
-            p Item {{ index }}: {{ item.name }}
-            input($$="'referenceName'":value="item.value" type="text" placeholder="{{ value.text }}")
-
-
     p This is a <span>nested</span> element.
+        div.item(*for="item in items" *for="index in item.indices" *if="item.visible" @click="this.itemClicked(item)" ?boolAttribute="item.isTrue()")
+
+            p Item {{ index }}: {{ item.name }}
+            input($$="'referenceName'" :value="item.value" type="text" placeholder="{{ value.text }}")
+

@@ -1,0 +1,18 @@
+<div id="container">
+    <p>This is a simple PUG template.</p>
+    <div class="container">
+
+        <div *for="item of items">
+            Do some stuff with {{ item.name }}
+        </div>
+
+        <!-- Repeat stuff -->
+        <div class="item" *for="item in {}.keys()" *if="item.visible" *for="index in item.indices" @click="itemClicked(item)" :boolAttribute="item.isTrue()">
+            <p>Item {{ index }}: {{ item.name }}</p>
+            <input :ref="'referenceName'" :value="item.value" type="text" :placeholder="value.text" />
+        </div>
+
+        <div *repeat="item of items; item.id"></div>
+    </div>
+    <p>This is a <span>nested</span> element.</p>
+</div>
