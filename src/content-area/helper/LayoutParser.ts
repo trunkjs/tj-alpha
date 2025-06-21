@@ -67,7 +67,7 @@ export class LayoutParser {
       }
 
       // Split by the first occurrence of parentheses to separate tag and attributes
-      const regex = /^(?<tag>[a-zA-Z0-9]+)?(?<inline>[a-zA-Z0-9:#_.-]+)?(?<attr>\(.*)?/;
+      const regex = /^(?<tag>[a-zA-Z0-9-]+)?(?<inline>[a-zA-Z0-9:#_.-]+)?(?<attr>\(.*)?/;
       const match = layoutString.match(regex);
       if ( ! match) {
         throw new Error(`Invalid layout string: '${layoutString}'`);

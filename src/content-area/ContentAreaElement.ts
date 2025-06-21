@@ -1,7 +1,6 @@
 import {ReactiveElement} from "lit";
 import {customElement} from "lit/decorators.js";
 import {ContentBuilder} from "./ContentBuilder";
-import {applyLayout} from "@/content-area/apply-layout";
 import {sleep} from "@/tools/sleep";
 import {TjResponsive} from "@/respnsive/responsive";
 

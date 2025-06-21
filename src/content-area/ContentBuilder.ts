@@ -125,6 +125,9 @@ export class ContentBuilder {
   }
 
 
+
+
+
   private appendToCurrentContainer(node: Node) {
     if (this.currentContainerNode === null) {
       throw new Error("No current container node set");

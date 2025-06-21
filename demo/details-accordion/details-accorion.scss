@@ -47,7 +47,7 @@ details {
     }
     &.open > slot#main {
         opacity: 1;                  /* Höhe wird via JS gesetzt */
-        height: var(--accordion-max-height, 100vh);
+        height: 100px;
     }
 
 
