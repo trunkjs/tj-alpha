@@ -5,7 +5,7 @@
 <body>
     <tj-content-area>
 
-        <h1 layout="use: #test1" section-class="some-class" layout-key="val1">H1 Element</h1>
+        <h1 layout="div.header">H1 Element</h1>
 
         <p>This is a paragraph of text.</p>
         <p>This is another paragraph of text.</p>
@@ -18,7 +18,7 @@
 
 
 
-        <h3 layout="use: #accordion-element">Accordion</h3>
+        <h3 layout="2:div.acc">Accordion</h3>
         <p>This is a paragraph of text.</p>
 
         <h2>H2 Element</h2>
@@ -36,12 +36,12 @@
         <h3>H5 Element</h3>
         <p>This is a paragraph of text.</p>
 
-        <hr i="2" class="some-class1">
+        <hr class="some-class1">
         <p>This is some Text</p>
-        <hr i="2.5">
+        <hr layout="2:div.hr">
         <p>Some 2.5 Node</p>
 
-        <hr i="+2">
+        <hr layout="+2">
         <p>This content is attached to the last 2.5 node</p>
 
     </tj-content-area>

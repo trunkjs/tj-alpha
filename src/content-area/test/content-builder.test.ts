@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect } from 'vitest';
-import { ContentBuilder } from '../content-builder';
+import { ContentBuilder } from '../ContentBuilder';
 
 /**
  * Utility helper – expects that the given heading / hr element
@@ -8,11 +8,12 @@ import { ContentBuilder } from '../content-builder';
  */
 function expectWrappedBySection(
     element: HTMLElement,
+    expectedTag: string,
     expectedI: string
 ): HTMLElement {
     const section = element.parentElement as HTMLElement;
     expect(section, `Element ${element.tagName} should have a parent`).not.toBeNull();
-    expect(section.tagName.toLowerCase()).toBe('section');
+    expect(section.tagName.toLowerCase()).toBe(expectedTag);
     expect(section.getAttribute('i')).toBe(expectedI);
     return section;
 }
@@ -23,7 +24,7 @@ describe('ContentBuilder arrangement based on example tj-content-area.html', () 
     const markup = `
         <tj-content-area>
 
-            <h1 layout="use: xtag" section-class="some-class" layout-key="val1">H1 Element</h1>
+            <h1 layout="xtag.some-class">H1 Element</h1>
 
             <p>This is a paragraph of text.</p>
             <p>This is another paragraph of text.</p>
@@ -43,14 +44,6 @@ describe('ContentBuilder arrangement based on example tj-content-area.html', () 
             <h3>H5 Element</h3>
             <p>This is a paragraph of text.</p>
 
-            <hr i="2" class="some-class1">
-            <p>This is some Text</p>
-            <hr i="2.5">
-            <p>Some 2.5 Node</p>
-
-            <hr i="+2">
-            <p class="plus2">This content is attached to the last 2.5 node</p>
-
         </tj-content-area>
     `;
 
@@ -66,7 +59,7 @@ describe('ContentBuilder arrangement based on example tj-content-area.html', () 
 
     it('wraps <h1> into its own section with i="2.0" on root level', () => {
         const h1 = area.querySelector('h1') as HTMLElement;
-        const section = expectWrappedBySection(h1, '2.0');
+        const section = expectWrappedBySection(h1, 'xtag', '2.0');
 
         // section itself has to be direct child of the root element
         expect(section.parentElement).toBe(area);
@@ -84,7 +77,7 @@ describe('ContentBuilder arrangement based on example tj-content-area.html', () 
     it('wraps the first <h2> into its own sibling section with i="2.0"', () => {
         const h2elements = Array.from(area.querySelectorAll('h2'));
         const h2First = h2elements[0] as HTMLElement;
-        const section = expectWrappedBySection(h2First, '2.0');
+        const section = expectWrappedBySection(h2First, "section",'2.0');
 
         // Must also be placed directly under root (sibling of the h1-section)
         expect(section.parentElement).toBe(area);

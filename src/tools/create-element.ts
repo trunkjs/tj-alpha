@@ -1,4 +1,4 @@
-type Attrs = Record<string, string>;
+type Attrs = Record<string, string | true>;
 
 export function create_element(
     tag: string,
@@ -9,7 +9,7 @@ export function create_element(
         children = [children];
     }
     const el = document.createElement(tag);
-    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    for (const k in attrs) el.setAttribute(k, attrs[k] !== true ? attrs[k] : '');
     for (const c of children)
         el.append(typeof c === 'string' ? document.createTextNode(c) : c);
     return el;

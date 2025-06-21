@@ -1,6 +1,6 @@
 import {ReactiveElement} from "lit";
 import {customElement} from "lit/decorators.js";
-import {ContentBuilder} from "@/content-area/content-builder";
+import {ContentBuilder} from "./ContentBuilder";
 import {applyLayout} from "@/content-area/apply-layout";
 import {sleep} from "@/tools/sleep";
 import {TjResponsive} from "@/respnsive/responsive";
@@ -38,10 +38,6 @@ export class ContentAreaElement extends ReactiveElement {
         let children = Array.from(this.children);
 
         contentBuilder.arrange(children);
-
-
-
-        applyLayout(this);
 
         let responsive = new TjResponsive();
         responsive.observe(document);

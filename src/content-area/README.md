@@ -8,7 +8,7 @@ This is useful for rendering Markdown content with Parsedown annotions.
 
 ```markdown
 ## Header 1
-{: layout="1.5:div.box; style='color: red;'"}
+{: layout="1.5:div.box(style='color: red;')"}
 
 Some Paragraph with a **bold** text.
 

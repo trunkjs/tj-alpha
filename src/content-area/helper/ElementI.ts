@@ -1,6 +1,6 @@
 
 export enum IModifier {
-    NONE = "none", // skp this node No Wrapping
+    SKIP = "skip", // skp this node No Wrapping
     APPEND = "append" // Append to the element with the same I
 }
 
@@ -18,8 +18,8 @@ export class ElementI {
     public setNewN(n : string) {
         n = n.toLowerCase().trim();
 
-        if (n === "none") {
-            this.mod = IModifier.NONE;
+        if (n === "-") {
+            this.mod = IModifier.SKIP;
             return;
         }
         if (n.startsWith("+")) {
@@ -45,7 +45,7 @@ export class ElementI {
 
     public getNasString() : string {
         let v = "";
-        if (this.mod === IModifier.NONE)
+        if (this.mod === IModifier.SKIP)
             return "none";
         if (this.mod === IModifier.APPEND)
             v += "+";
