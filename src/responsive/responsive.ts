@@ -60,7 +60,7 @@ export class TjResponsive {
     elements.forEach(element => {
       if (!this.originalData.has(element)) {
         this.originalData.set(element, {
-          classes: element.className,
+          classes: element.className ,
           styles: element.getAttribute("style") || "",
         });
       }
@@ -74,6 +74,9 @@ export class TjResponsive {
    * Determines whether an element should be processed for responsive styles.
    */
   private needsResponsiveProcessing(element: HTMLElement): boolean {
+    if ( ! ( element instanceof HTMLElement)) {
+      return false; // Reject svg and other non-HTMLElement types
+    }
     if (element.hasAttribute("class")) {
       return true;
     }
