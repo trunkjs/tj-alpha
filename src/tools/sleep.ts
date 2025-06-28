@@ -1,38 +1,43 @@
-
-
 export async function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// language=pug
-let c = `
-doctype html
-div(class="container")
-    hi(*for="x of items" *for="y of items" @item="this.mama" :item="manila") Hello Word
-`;
 
 export class Debouncer {
-    private timeout: NodeJS.Timeout | null = null;
+  private timeout: NodeJS.Timeout | null = null;
+  private startTimeWithMs: number = 0;
 
-    constructor(private delay: number) {}
+  /**
+   *
+   * @param delay     Debounce delay in milliseconds
+   * @param max_delay Maximum delay in milliseconds, if false then no maximum delay is applied
+   */
+  constructor(private delay: number, private max_delay: number | false = false) {
+  }
 
-    public async wait() {
-        if (this.timeout) {
-            clearTimeout(this.timeout);
-        }
-        return new Promise((resolve) => {
-            this.timeout = setTimeout(() => {
-                resolve(true);
-            }, this.delay);
-        });
+  public async wait() {
+    if (this.startTimeWithMs === 0) {
+      this.startTimeWithMs = Date.now();
     }
-
-    public debounce(callback: () => void) {
-        if (this.timeout) {
-            clearTimeout(this.timeout);
-        }
-        this.timeout = setTimeout(() => {
-            callback();
-        }, this.delay);
+    if (this.timeout) {
+      if (this.max_delay === false || this.startTimeWithMs + this.max_delay > Date.now()) {
+        clearTimeout(this.timeout);
+      }
     }
+    return new Promise((resolve) => {
+      this.timeout = setTimeout(() => {
+        this.startTimeWithMs = 0; // Reset start time after the wait is complete
+        resolve(true);
+      }, this.delay);
+    });
+  }
+
+  public debounce(callback: () => void) {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(() => {
+      callback();
+    }, this.delay);
+  }
 }

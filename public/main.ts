@@ -1,11 +1,10 @@
 import "./test.scss";
 import {css, html, unsafeCSS} from "lit";
+import {TjResponsive} from "@/respnsive/responsive";
 export {ContentAreaElement} from "@/content-area/ContentAreaElement";
+export {TjResponsive} from "@/respnsive/responsive";
 
 
-import style from "./test1.scss?inline";
-import {qhtml} from "@/qhtml/qhtml";
 
-import "../demo/details-accordion/details-accorion";
-
+(new TjResponsive()).observe(document);
 

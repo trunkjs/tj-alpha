@@ -37,10 +37,5 @@ export class ContentAreaElement extends ReactiveElement {
         let children = Array.from(this.children);
 
         contentBuilder.arrange(children);
-
-        let responsive = new TjResponsive();
-        responsive.observe(document);
-
-        //contentBuilder.arrange(rest);
     }
 }

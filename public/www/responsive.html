@@ -1,17 +1,33 @@
 <html>
 <head>
     <title>My First Web Page</title>
+  <style>
+    .box {
+        width: 100px;
+        height: 100px;
+        background-color: lightblue;
+        margin: 10px;
+      border: 2px solid blue;
+    }
+
+    .box.desktop {
+        display: block;
+      background-color: red !important;
+    }
+
+  </style>
 </head>
 <body>
     <tj-content-area>
-
-
-        <p class="xl:desktop -xl:mobile">This is a paragraph of text.</p>
-        <p style--xl="display:none">This is another paragraph of text.</p>
+        <p class="box xl:desktop -xl:mobile">This is a paragraph of text.</p>
+        <p xl-style="display:none">This varnishes >xl</p>
+        <p style="display: none" xl-style="display:block">This displays > xl</p>
+        <p xl-style="display: none;" style="display: block" xl-style="display:block">This displays > xl</p>
 
     </tj-content-area>
 
     <p>This is another paragraph of text.</p>
     <script type="module" src="/public/main.ts"></script>
+
 </body>
 </html>
