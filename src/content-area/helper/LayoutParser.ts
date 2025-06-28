@@ -54,7 +54,7 @@ export class LayoutParser {
       } as Layout;
 
       // Detect i
-      const regexI = /^(\+?[0-9.]+|-)/;
+      const regexI = /^(\+?[0-9][0-9.]*|-)/;
       const matches = layoutString.match(regexI);
       if (matches){
         ret.i = matches[1] || null; // Extract the index if present

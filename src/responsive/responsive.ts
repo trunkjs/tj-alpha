@@ -1,5 +1,5 @@
-import {Debouncer} from "@/tools/sleep";
-import {domContentLoaded} from "@/tools/event-promise";
+import {Debouncer} from "../tools/sleep";
+import {domContentLoaded} from "../tools/event-promise";
 
 
 export function getCurrentBreakpoint(): string {
