@@ -2,8 +2,8 @@ import {ReactiveElement} from "lit";
 import {customElement} from "lit/decorators.js";
 import {ContentBuilder} from "./ContentBuilder";
 import {sleep} from "@/tools/sleep";
-import {TjResponsive} from "@/respnsive/responsive";
-import {domContentLoaded} from "@/tools/event-promise";
+import {TjResponsive} from "@/responsive/responsive";
+import {domContentLoaded} from "../tools/event-promise";
 
 
 @customElement('tj-content-area')
