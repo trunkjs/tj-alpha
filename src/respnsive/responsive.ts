@@ -1,4 +1,5 @@
 import {Debouncer} from "@/tools/sleep";
+import {domContentLoaded} from "@/tools/event-promise";
 
 
 export function getCurrentBreakpoint(): string {
@@ -158,7 +159,8 @@ export class TjResponsive {
    *
    * @param target HTMLElement to observe
    */
-  observe(target: HTMLElement | Document | ShadowRoot): void {
+  async observe(target: HTMLElement | Document | ShadowRoot): Promise<void> {
+    await domContentLoaded();
     console.log("TjResponsive: Observing changes in target element", target);
     let debouncer = new Debouncer(100, 500);
     let currentBreakpoint = getCurrentBreakpoint();

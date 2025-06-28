@@ -18,7 +18,7 @@ export class ContentBuilder {
   private containerPath: HTMLElement[] = [];
   private containerIndex: number[] = [0];
   private layoutParser : LayoutParser;
-  constructor(rootNode: HTMLElement) {
+  constructor(rootNode: HTMLElement, public debug: boolean = false) {
     this.currentContainerNode = this.rootNode = rootNode;
     this.containerPath.push(this.rootNode);
     this.layoutParser = new LayoutParser();
@@ -100,20 +100,23 @@ export class ContentBuilder {
     this.containerIndex.length = j;
     // Create new Node and apply attributes from original node
 
-    containerNode.appendChild(create_element("p", {}, JSON.stringify({
-      integ: i.getNasInt(),
-      string: i.getNasString(),
-      mod: i.getModifier()
-    })));
+    if (this.debug) {
+      containerNode.appendChild(create_element("p", {}, JSON.stringify({
+        integ: i.getNasInt(),
+        string: i.getNasString(),
+        mod: i.getModifier()
+      })));
+    }
+
     containerNode.appendChild(node);
     curContainer.appendChild(containerNode);
 
     // Hide HR Elements with i-attribute
-    if (node.tagName === "HR" && node.hasAttribute("i")) {
+    if (node.tagName === "HR" && node.hasAttribute("layout")) {
       // hr shortcut. Move all attributes to the new container node. If there are any attributes if append modifier - trigger a warning and ignore them
 
       // if the node is a hr and has a section-hr attribute, set it to the new container node
-      node.setAttribute("hidden", "true");
+      node.setAttribute("hidden", "");
 
     }
 

@@ -3,39 +3,38 @@ import {customElement} from "lit/decorators.js";
 import {ContentBuilder} from "./ContentBuilder";
 import {sleep} from "@/tools/sleep";
 import {TjResponsive} from "@/respnsive/responsive";
+import {domContentLoaded} from "@/tools/event-promise";
 
 
 @customElement('tj-content-area')
 export class ContentAreaElement extends ReactiveElement {
-    static get is() {
-        return 'content-area';
-    }
+  static get is() {
+    return 'tj-content-area';
+  }
 
-    protected createRenderRoot(): HTMLElement | DocumentFragment {
-        return this;
-    }
+  protected createRenderRoot(): HTMLElement | DocumentFragment {
+    return this;
+  }
 
-    static get properties() {
-        return {
+  static get properties() {
+    return {};
+  }
 
-        };
-    }
+  constructor() {
+    super();
 
-    constructor() {
-        super();
+  }
 
-    }
+  async connectedCallback() {
+    await domContentLoaded();
 
-    async connectedCallback() {
-        super.connectedCallback();
+    super.connectedCallback();
 
-        await sleep(1);
+    let contentBuilder = new ContentBuilder(this as HTMLElement);
+    // Start with the first 3 children - wait and then add the rest
 
-        let contentBuilder = new ContentBuilder(this as HTMLElement);
-        // Start with the first 3 children - wait and then add the rest
+    let children = Array.from(this.children);
 
-        let children = Array.from(this.children);
-
-        contentBuilder.arrange(children);
-    }
+    contentBuilder.arrange(children);
+  }
 }
