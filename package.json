@@ -3,8 +3,8 @@
   "version": "1.0.1",
   "description": "",
   "license": "proprietary",
-  "main": "./dist/index.js",
-  "module": "./dist/index.module.js",
+  "main": "./index.js",
+  "module": "./index.js",
   "directories": {
     "doc": "docs",
     "themes": "themes"

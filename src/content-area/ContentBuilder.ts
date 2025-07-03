@@ -1,7 +1,9 @@
-import {ElementI, IModifier} from "@/content-area/helper/ElementI";
-import {create_element} from "@/tools/create-element";
-import {Layout, LayoutParser} from "@/content-area/helper/LayoutParser";
-import {TjErrorElement} from "@/content-area/helper/ErrorElement";
+
+import {ElementI, IModifier} from "./helper/ElementI";
+import {Layout, LayoutParser} from "./helper/LayoutParser";
+import {create_element} from "../tools/create-element";
+import {TjErrorElement} from "./helper/ErrorElement";
+
 
 
 const autoIElements = ["h1", "h2", "h3", "h4", "h5", "h6", "hr"];

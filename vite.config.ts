@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import path from "path";
 
 export default defineConfig({
   server: {
@@ -9,7 +10,6 @@ export default defineConfig({
   },
     resolve : {
         alias: {
-          '@': '/src'
         }
     },
   root: './',
@@ -18,12 +18,5 @@ export default defineConfig({
     rollupOptions: {
       input: './public/main.ts'
     }
-  },
-
-  test: {
-    globals: true,
-    inspect: "0.0.0.0:9229",
-
-    environment: 'jsdom'
   }
 });

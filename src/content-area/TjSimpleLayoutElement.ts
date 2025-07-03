@@ -1,5 +1,5 @@
 import {LitElement} from "lit";
-import {arrangeSlots} from "@/content-area/slot-maschine";
+import {arrangeSlots} from "./slot-maschine";
 
 
 export class TjSimpleLayoutElement extends LitElement {
