@@ -1,6 +1,7 @@
 import {ElementI, IModifier} from "@/content-area/helper/ElementI";
 import {create_element} from "@/tools/create-element";
 import {Layout, LayoutParser} from "@/content-area/helper/LayoutParser";
+import {TjErrorElement} from "@/content-area/helper/ErrorElement";
 
 
 const autoIElements = ["h1", "h2", "h3", "h4", "h5", "h6", "hr"];
@@ -69,7 +70,21 @@ export class ContentBuilder {
       attributes.id = layout.layout.id;
     }
 
-    let newContainerNode = create_element(layout.layout.tag || 'section', attributes);
+    let tag = layout.layout.tag || 'section';
+
+    // Check for custom Element tag (contains dashes)
+    if (tag.includes("-")) {
+      // If the tag is a custom element, check if it is registered
+      let constructor = customElements.get(tag);
+      if (!constructor) {
+        const msg = `Custom element <${tag}> not found.`;
+        console.error(msg, originalNode);
+        return new TjErrorElement(msg, originalNode.outerHTML);
+      }
+    }
+
+
+    let newContainerNode = create_element(tag, attributes);
     // copy all attributes starting with "section-" or layout to new Node
     let newContainerAttributes = originalNode.getAttributeNames()
 
