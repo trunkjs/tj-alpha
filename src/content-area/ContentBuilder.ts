@@ -4,10 +4,17 @@ import {Layout, LayoutParser} from "./helper/LayoutParser";
 import {create_element} from "../tools/create-element";
 import {TjErrorElement} from "./helper/ErrorElement";
 
+export type ElementDefinitionRule = {
+  selector: string; // The tag name of the element
+  layout: string; // The layout to apply to the element
+}
+
+export type ElementDefinition = {
+  rules: ElementDefinitionRule[];
+}
 
 
 const autoIElements = ["h1", "h2", "h3", "h4", "h5", "h6", "hr"];
-
 
 type ElementLayout = {
   layout: Layout;
@@ -73,20 +80,26 @@ export class ContentBuilder {
     }
 
     let tag = layout.layout.tag || 'section';
-
+    let elementDefintion = null as  ElementDefinition | null;
     // Check for custom Element tag (contains dashes)
     if (tag.includes("-")) {
       // If the tag is a custom element, check if it is registered
-      let constructor = customElements.get(tag);
+      let constructor = customElements.get(tag) as any;
       if (!constructor) {
         const msg = `Custom element <${tag}> not found.`;
         console.error(msg, originalNode);
         return new TjErrorElement(msg, originalNode.outerHTML);
       }
+      elementDefintion = constructor["DEFINITION"] as ElementDefinition | null;
     }
 
 
+
+
+
     let newContainerNode = create_element(tag, attributes);
+    // @ts-expect-error
+    newContainerNode["__elementDefinition"] = elementDefintion;
     // copy all attributes starting with "section-" or layout to new Node
     let newContainerAttributes = originalNode.getAttributeNames()
 
