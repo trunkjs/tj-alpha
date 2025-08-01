@@ -1,5 +1,6 @@
 export * from './content-area/TjSimpleLayoutElement';
 export * from './content-area/ContentAreaElement';
+export * from './content-area2/ContentAreaElement2';
 export * from './content-area/slot-maschine';
 
 export * from "./responsive/responsive";

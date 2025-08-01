@@ -1,0 +1,180 @@
+import {create_element} from "../../tools/create-element";
+
+
+type IType = {
+  /**
+   * Number  10 - 60 - 2.5 -> 25
+   */
+  i: number;
+  variant: "append" | "new" | "skip";
+}
+
+
+export class SectionTreeBuilder {
+
+  private rootNode: HTMLElement;
+  private currentContainerNode: HTMLElement | null = null;
+  private containerPath: HTMLElement[] = [];
+  private containerIndex: number[] = [0];
+  constructor(rootNode: HTMLElement, public debug: boolean = false) {
+    this.currentContainerNode = this.rootNode = rootNode;
+    this.containerPath.push(this.rootNode);
+  }
+
+
+  private lastFixedI : number = 20;
+
+  private getI(element: HTMLElement): IType | null {
+    const tagname = element.tagName;
+    const layout = element.getAttribute("layout");
+    let ret = {i: -99, variant: "new"} as IType;
+    if (layout) {
+      const regex = /^(\+|-|)([0-9]\.?[0-9]?|)(;|$)/;
+      const matches = layout.match(regex);
+      if (matches) {
+        console.debug("Layout matches", matches);
+        ret.variant = matches[1] === "+" ? "append" : matches[1] === "-" ? "skip" : "new"
+        if (matches[2] !== "") {
+          ret.i = parseFloat(matches[2]) * 10; // Convert to 10s scale
+        }
+      }
+
+    }
+
+    if (ret.i === -99 && tagname.startsWith("H") && tagname.length === 2) {
+      let val = tagname.substring(1);
+      if (val === "1") {
+        val = "2"; // Treat H1 as H2
+      }
+      // If the tag is H1-H6, set i based on the tag name
+      ret.i = parseInt(val) * 10; // Convert to 10s scale
+      this.lastFixedI = ret.i;
+      return ret;
+    }
+
+    if (ret.i === -99 && tagname === "HR") {
+      ret.i = this.lastFixedI + 5; // HRs are always 5 after the last fixed i
+      return ret;
+    }
+
+
+
+    return null;
+  }
+
+
+
+
+  protected getAttributeRecords(originalNode: HTMLElement, isHR = false): Record<string, string> {
+    let attributes: Record<string, string> = {};
+    for (let attr of originalNode.attributes) {
+      if (attr.name.startsWith("section-")) {
+        // stip the section- prefix
+        attributes[attr.name] = attr.value.replace(/^section-/, "");
+      } else if (attr.name.startsWith("layout")) {
+        // Copy layout attributes without the "layout-" prefix
+        attributes[attr.name] = attr.value;
+        // Remove the layout attribute from the original node
+        originalNode.removeAttribute(attr.name);
+      } else if (isHR) {
+        // Copy all attributes if copyAll is true
+        attributes[attr.name] = attr.value;
+      }
+    }
+    if ( ! isHR) {
+      // Copy classes with "section-" prefix
+      for(let className of Array.from(originalNode.classList)) {
+        if (className.startsWith("section-")) {
+          attributes["class"] = (attributes["class"] || "") + " " + className.replace(/^section-/, "");
+          // Remove the class from the original node
+          originalNode.classList.remove(className);
+        }
+      }
+    }
+    return attributes;
+  }
+
+
+
+  protected createNewContainerNode(originalNode: HTMLElement): HTMLElement {
+    // Join all layout classes
+    // If original Node is HR - copy all classes and attributes
+    let attributes = this.getAttributeRecords(originalNode, originalNode.tagName === "HR");
+    let newContainerNode = create_element("section", attributes);
+    return newContainerNode;
+  }
+
+
+  protected arrangeSingleNode(node: HTMLElement, it: IType) {
+    let i = it.i;
+    let j = 0;
+    for (j = 0; j < this.containerIndex.length; j++) {
+      if (this.containerIndex[j] >= it.i) {
+        break;
+      }
+    }
+
+
+    let containerNode = null;
+    if (it.variant === "append") {
+      console.log("Appending to container at index", j, "with i", it.i);
+      debugger
+      containerNode = this.containerPath[j]
+    } else {
+      containerNode = this.createNewContainerNode(node);
+    }
+
+    let curContainer = this.containerPath[j - 1];
+    this.containerPath.length = j;
+    this.containerIndex.length = j;
+    // Create new Node and apply attributes from original node
+
+
+
+    containerNode.appendChild(node);
+    curContainer.appendChild(containerNode);
+
+
+    this.containerPath.push(containerNode);
+    this.containerIndex.push(it.i);
+    this.currentContainerNode = containerNode;
+
+  }
+
+
+
+
+
+  private appendToCurrentContainer(node: Node) {
+    if (this.currentContainerNode === null) {
+      throw new Error("No current container node set");
+    }
+    this.currentContainerNode.appendChild(node);
+  }
+
+
+  public arrange(nodes: Node[]) {
+
+    for (let curNode of nodes) {
+      if (curNode.nodeType !== Node.ELEMENT_NODE) {
+        this.appendToCurrentContainer(curNode);
+        continue;
+      }
+      const element = curNode as HTMLElement;
+      let it = this.getI(element);
+      if ( ! it || it.variant === "skip") {
+        // skip this node
+        this.appendToCurrentContainer(curNode);
+        continue;
+      }
+
+
+      this.arrangeSingleNode(element, it);
+    }
+
+
+  }
+
+
+
+}
