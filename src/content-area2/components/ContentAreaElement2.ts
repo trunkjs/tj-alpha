@@ -1,18 +1,21 @@
 import {ReactiveElement} from "lit";
 import {customElement} from "lit/decorators.js";
-import {domContentLoaded} from "../tools/event-promise";
-import {SectionTreeBuilder} from "./lib/SectionTreeBuilder";
-import {Stopwatch} from "../tools/Stopwatch";
-import {sleep} from "../tools/sleep";
+import {domContentLoaded} from "../../tools/event-promise";
+import {SectionTreeBuilder} from "../lib/SectionTreeBuilder";
+import {Stopwatch} from "../../tools/Stopwatch";
+import {sleep} from "../../tools/sleep";
+import {LoggingMixin} from "@/tools/mixins/LoggingMixin";
+import {applyLayout} from "@/content-area2";
 
 
-@customElement('tj-content-area2')
-export class ContentAreaElement2 extends ReactiveElement {
+@customElement('content-area2')
+export class ContentAreaElement2 extends LoggingMixin(ReactiveElement) {
   static get is() {
     return 'tj-content-area';
   }
 
   protected createRenderRoot(): HTMLElement | DocumentFragment {
+
     return this;
   }
 
@@ -40,6 +43,7 @@ export class ContentAreaElement2 extends ReactiveElement {
 
     sectionTreeBuilder.arrange(children);
 
+    applyLayout(Array.from(this.children), {recursive: true});
 
     sw.lap("after arrange");
   }

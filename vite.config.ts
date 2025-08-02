@@ -8,10 +8,15 @@ export default defineConfig({
     hmr: true
 
   },
-    resolve : {
-        alias: {
-        }
-    },
+  resolve : {
+      alias: {
+        "@": path.resolve(__dirname, './src'),
+      }
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+  },
   root: './',
     publicDir: './public/www',
   build: {

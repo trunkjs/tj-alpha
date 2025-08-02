@@ -1,12 +1,13 @@
 import {LitElement, html, unsafeCSS} from "lit";
 import {customElement} from "lit/decorators.js";
 import style from "./ErrorElement.scss?inline";
+import {property} from "lit/decorators.js";
 
 @customElement("tj-error-element")
 export class TjErrorElement extends LitElement {
 
   private originalCode?: string;
-  private message: string;
+  @property({type: String, reflect: true})private message: string;
   static styles = [unsafeCSS(style)];
   static get is() {
     return "tj-error-element";
@@ -28,6 +29,7 @@ export class TjErrorElement extends LitElement {
           ${this.originalCode ? this.originalCode : "No code provided."}
         </pre>
 
+        <slot></slot>
       </div>
     `;
   }

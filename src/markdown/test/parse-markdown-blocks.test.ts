@@ -120,6 +120,18 @@ describe('parse_markdown_blocks – edge-cases', () => {
         expect(inner).toBe('let x = 1;');
     });
 
+     it("handles kramdown attributes on h2 correclty", () => {
+        const md = `# Title \n{: #id .wurst layout="wide" }`;
+        const ast = parse_markdown_blocks(md);
+
+        expect(ast.length).toBe(1);
+        expect(ast[0].type).toBe("heading");
+        expect(ast[0].heading_level).toBe(1);
+        expect(ast[0].children![0].content).toBe("Title");
+        expect(ast[0].kramdown).toBeDefined();
+
+    });
+
     it("handles kramdown attributes correclty", () => {
         const md = `# Title \n{: #id .class }`;
         const ast = parse_markdown_blocks(md);

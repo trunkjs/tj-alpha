@@ -1,14 +1,25 @@
 import {create_element} from "../../tools/create-element";
 
 
-type IType = {
+export type IType = {
   /**
    * Number  10 - 60 - 2.5 -> 25
    */
   i: number;
   variant: "append" | "new" | "skip";
+
+  tag: "hr" | "h";
+  hi?: number | null; // Only available for headers
 }
 
+
+export interface SectionTreeElement {
+  __IT: IType;
+}
+
+export function isSectionTreeElement(obj: any): obj is SectionTreeElement {
+  return obj && typeof obj === 'object' && '__I__' in obj && typeof obj.__I__ === 'object' && 'i' in obj.__I__;
+}
 
 export class SectionTreeBuilder {
 
@@ -27,7 +38,7 @@ export class SectionTreeBuilder {
   private getI(element: HTMLElement): IType | null {
     const tagname = element.tagName;
     const layout = element.getAttribute("layout");
-    let ret = {i: -99, variant: "new"} as IType;
+    let ret = {i: -99, variant: "new", tag: "hr", hi: null} as IType;
     if (layout) {
       const regex = /^(\+|-|)([0-9]\.?[0-9]?|)(;|$)/;
       const matches = layout.match(regex);
@@ -41,14 +52,20 @@ export class SectionTreeBuilder {
 
     }
 
-    if (ret.i === -99 && tagname.startsWith("H") && tagname.length === 2) {
+    if (tagname.startsWith("H") && tagname.length === 2) {
       let val = tagname.substring(1);
+      ret.tag = "h";
+      ret.hi = parseInt(val);
       if (val === "1") {
         val = "2"; // Treat H1 as H2
       }
       // If the tag is H1-H6, set i based on the tag name
-      ret.i = parseInt(val) * 10; // Convert to 10s scale
-      this.lastFixedI = ret.i;
+      if (ret.i === -99) {
+        // Only set if not already set by layout
+        ret.i = parseInt(val) * 10; // Convert to 10s scale
+        this.lastFixedI = ret.i;
+      }
+
       return ret;
     }
 
@@ -96,11 +113,14 @@ export class SectionTreeBuilder {
 
 
 
-  protected createNewContainerNode(originalNode: HTMLElement): HTMLElement {
+  protected createNewContainerNode(originalNode: HTMLElement, it : IType): HTMLElement {
     // Join all layout classes
     // If original Node is HR - copy all classes and attributes
     let attributes = this.getAttributeRecords(originalNode, originalNode.tagName === "HR");
-    let newContainerNode = create_element("section", attributes);
+    let newContainerNode = create_element("section", attributes) as HTMLElement & SectionTreeElement;
+    newContainerNode.__IT = it;
+
+
     return newContainerNode;
   }
 
@@ -121,7 +141,7 @@ export class SectionTreeBuilder {
       debugger
       containerNode = this.containerPath[j]
     } else {
-      containerNode = this.createNewContainerNode(node);
+      containerNode = this.createNewContainerNode(node, it);
     }
 
     let curContainer = this.containerPath[j - 1];

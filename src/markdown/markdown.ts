@@ -12,6 +12,7 @@ export class MarkdownDocument {
 
     set markdown(value: string) {
         this._ast = parse_markdown_blocks(value);
+        console.log("Parsed Markdown AST:", this._ast);
     }
 
     public getHTML() : HTMLDivElement {

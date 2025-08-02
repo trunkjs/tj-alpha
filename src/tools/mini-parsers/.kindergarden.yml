@@ -1,0 +1,20 @@
+version: 1.0
+
+environments:
+    coder:
+        files:
+            - name: "project files"
+              enabled: true
+              include:
+                  - "./**/*"
+                  - "./*.*"
+              instructions: |
+                  These are all project files. You can edit them as you like.
+
+            - name: "context files"
+              enabled: true
+              include:
+                  - "/opt/.editorconfig"
+                  - "/opt/vite.config.ts"
+              instructions: |
+                  These are contextual files that define the environment.

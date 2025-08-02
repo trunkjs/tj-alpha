@@ -66,6 +66,7 @@ export function parse_markdown_blocks(input : string) : MarkdownBlockElement[] {
 
         let content = tr.rest;
         let contentArr = content.split("\n");
+
         if (contentArr[contentArr.length - 1].startsWith("{:")) {
             block.kramdown = parse_kramdown(contentArr.pop() as string).elements;
             content = contentArr.join("\n");
