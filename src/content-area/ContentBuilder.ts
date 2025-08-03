@@ -2,7 +2,7 @@
 import {ElementI, IModifier} from "./helper/ElementI";
 import {Layout, LayoutParser} from "./helper/LayoutParser";
 import {create_element} from "../tools/create-element";
-import {TjErrorElement} from "./helper/ErrorElement";
+import {TjErrorElement} from "../error-element/ErrorElement";
 
 export type ElementDefinitionRule = {
   selector: string; // The tag name of the element
