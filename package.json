@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "description": "",
   "license": "proprietary",
+  "type": "module",
   "main": "./index.js",
   "module": "./index.js",
   "directories": {
@@ -34,7 +35,7 @@
   },
   "scripts": {
     "debug": "node --inspect-brk node_modules/vite/bin/vite.js",
-    "build": "npm run make.mjs && npm run make.cjs",
+    "build": "vite build",
     "test": "vitest"
   },
   "devDependencies": {
