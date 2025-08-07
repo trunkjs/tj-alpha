@@ -18,7 +18,7 @@ export default defineConfig({
     globals: true,
   },
   root: './',
-    publicDir: './public/www',
+  publicDir: './public/www',
   build: {
     rollupOptions: {
       input: './public/main.ts'

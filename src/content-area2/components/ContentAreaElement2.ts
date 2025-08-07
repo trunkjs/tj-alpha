@@ -1,9 +1,8 @@
 import {ReactiveElement} from "lit";
 import {customElement} from "lit/decorators.js";
-import {domContentLoaded} from "../../tools/event-promise";
-import {SectionTreeBuilder} from "../lib/SectionTreeBuilder";
-import {Stopwatch} from "../../tools/Stopwatch";
-import {sleep} from "../../tools/sleep";
+import {domContentLoaded} from "@/tools/event-promise";
+import {SectionTreeBuilder} from "@/content-area2";
+import {Stopwatch} from "@/tools/Stopwatch";
 import {LoggingMixin} from "@/tools/mixins/LoggingMixin";
 import {applyLayout} from "@/content-area2";
 
